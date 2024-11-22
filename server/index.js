@@ -5,12 +5,14 @@ const MongoStore = require('connect-mongo');
 const mongoose = require('mongoose');
 require('dotenv').config()
 
+const cors = require('cors')
+
 const User = require("./models/User");
 const Authenticator = require("./services/auth/Authenticator");
 const BaseDbInit = require("./services/data/BaseDbInit");
 const DbAccessor = require("./services/data/DbAccessor");
 
-const PORT = process.env.PORT;
+const PORT = process.env.BACKEND_PORT;
 const MONGODB_URI = process.env.MONGODB_URI;
 const SECRET = process.env.SECRET;
 
@@ -19,6 +21,7 @@ const app = express();
 mongoose.connect(MONGODB_URI);
 const db = mongoose.connection;
 
+app.use(cors())
 app.use(express.urlencoded({ extended: false }));
 app.use(session({
     secret: SECRET,

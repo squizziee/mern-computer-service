@@ -1,9 +1,11 @@
 const mongoose = require('mongoose');
+const { DeviceTypeSchema } = require('./DeviceType');
+const { ServiceTypeSchema } = require('./ServiceType');
 const Schema = mongoose.Schema;
 
 const ServiceSchema = new Schema({
     service_type: {
-        type: mongoose.Schema.Types.ObjectId, ref: 'ServiceType',
+        type: ServiceTypeSchema,
         required: true,
     },
     name: {
@@ -23,8 +25,7 @@ const ServiceSchema = new Schema({
         required: true,
     },
     device_types: {
-        type: [mongoose.Schema.Types.ObjectId],
-        ref: 'DeviceType',
+        type: [DeviceTypeSchema],
         required: true
     },
 });

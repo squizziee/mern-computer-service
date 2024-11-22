@@ -1,5 +1,7 @@
 const ServiceModel = require("../../models/Service");
 const mongoose = require('mongoose');
+const { ServiceTypeModel } = require("../../models/ServiceType");
+const { DeviceTypeModel } = require("../../models/DeviceType");
 
 class DbAccessor {
     async getServiceById(id) {
@@ -7,24 +9,43 @@ class DbAccessor {
     }
 
     async addService({ service_type_id, name, description, base_price, device_types }) {
+        let types = [];
+        try {
+            for (let id of device_types) {
+                types.push(await DeviceTypeModel.findById(id));
+            }
+        } catch (err) {
+            types.push(await DeviceTypeModel.findById(device_types))
+        }
+
         let tmp = new ServiceModel({
-            service_type: service_type_id,
+            service_type: await ServiceTypeModel.findById(service_type_id),
             name: name,
             description: description,
             base_price: base_price,
-            device_types: device_types,
+            device_types: types,
         })
         await tmp.save();
         return tmp.id;
     }
 
     async updateServiceById({ service_id, service_type_id, name, description, base_price, device_types }) {
+        let types = [];
+        if (device_types) {
+            try {
+                for (let id of device_types) {
+                    types.push(await DeviceTypeModel.findById(id));
+                }
+            } catch (err) {
+                types.push(await DeviceTypeModel.findById(device_types))
+            }
+        }
         return await ServiceModel.findByIdAndUpdate(service_id, {
-            service_type: service_type_id,
+            service_type: await ServiceTypeModel.findById(service_type_id),
             name: name,
             description: description,
             base_price: base_price,
-            device_types: device_types,
+            device_types: types,
         })
     }
 
