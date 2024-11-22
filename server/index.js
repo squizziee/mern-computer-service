@@ -1,14 +1,14 @@
 const express = require("express");
 const session = require("express-session");
 const passport = require("passport");
-const LocalStrategy = require("passport-local").Strategy;
 const MongoStore = require('connect-mongo');
 const mongoose = require('mongoose');
-const GoogleStrategy = require('passport-google-oidc');
 require('dotenv').config()
 
 const User = require("./models/User");
 const Authenticator = require("./services/auth/Authenticator");
+const BaseDbInit = require("./services/data/BaseDbInit");
+const DbAccessor = require("./services/data/DbAccessor");
 
 const PORT = process.env.PORT;
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -94,6 +94,147 @@ app.get('/profile', function (req, res) {
 
 app.get("/api", (req, res) => {
     res.json({ message: "Hello from server!" });
+});
+
+app.post("/api/init_database", async (req, res, next) => {
+    if (!req.user) {
+        res.status(401);
+        res.send("Not authenticated");
+        return;
+    }
+    try {
+        let tmp = new BaseDbInit();
+        //await tmp.initializeServiceTypes();
+        //await tmp.initializeDeviceTypes();
+        await tmp.initializeServices();
+        res.status(200);
+    } catch (err) {
+        res.status(501);
+        res.send('An error occured while processing request');
+        console.log(err);
+        return;
+    } finally {
+        res.redirect("/api")
+    }
+});
+
+// Service CRUD
+app.get("/api/service/:id", async (req, res) => {
+    try {
+        const dbAccess = new DbAccessor();
+        const service_id = req.params['id'];
+        const result = await dbAccess.getServiceById(service_id);
+
+        if (!result) {
+            res.status(404);
+            res.send(`No service with id ${service_id} found`)
+        }
+        else {
+            res.status(200);
+            res.send(result.toJSON());
+        }
+    } catch (err) {
+        res.status(500);
+        res.send('An error occured while processing request');
+        console.log(err);
+    }
+
+});
+
+app.post("/api/service", async (req, res, next) => {
+    if (!req.user) {
+        res.status(401);
+        res.send("Not authenticated");
+        return;
+    }
+    try {
+        const dbAccess = new DbAccessor();
+        const data = req.body;
+        await dbAccess.addService({
+            service_type_id: data.service_type_id,
+            name: data.name,
+            description: data.description,
+            base_price: data.base_price,
+            device_types: data.device_types,
+        })
+        res.status(200);
+    } catch (err) {
+        res.status(501);
+        res.send('An error occured while processing request');
+        console.log(err);
+    } finally {
+        res.redirect("/api")
+    }
+});
+
+app.put("/api/service/:id", async (req, res, next) => {
+    if (!req.user) {
+        res.status(401);
+        res.send("Not authenticated");
+        return;
+    }
+    try {
+        const dbAccess = new DbAccessor();
+        const service_id = req.params['id']
+        const data = req.body;
+        await dbAccess.updateServiceById({
+            service_id: service_id,
+            service_type_id: data.service_type_id,
+            name: data.name,
+            description: data.description,
+            base_price: data.base_price,
+            device_types: data.device_types,
+        })
+        res.status(200);
+    } catch (err) {
+        res.status(501);
+        res.send('An error occured while processing request');
+        console.log(err);
+    } finally {
+        res.redirect("/api")
+    }
+});
+
+app.delete("/api/service/:id", async (req, res, next) => {
+    if (!req.user) {
+        res.status(401);
+        res.send("Not authenticated");
+        return;
+    }
+    try {
+        const dbAccess = new DbAccessor();
+        const service_id = req.params['id'];
+        await dbAccess.deleteServiceById(service_id);
+        res.send({ message: `Service with id of ${service_id} deleted successfully` });
+    } catch (err) {
+        console.log(err);
+    } finally {
+        res.redirect("/api")
+    }
+
+});
+
+// Service search
+app.get("/api/service", async (req, res) => {
+    try {
+        const dbAccess = new DbAccessor();
+        const data = req.query;
+        const result = await dbAccess.getServices({
+            service_type_id: data.service_type_id,
+            min_price: data.min_price,
+            max_price: data.max_price,
+            device_types: data.device_types,
+            text_query: data.text_query,
+            sort_by: data.sort,
+        });
+        res.status(200);
+        res.send(result);
+    } catch (err) {
+        res.status(500);
+        res.send('An error occured while processing request');
+        console.log(err);
+    }
+
 });
 
 app.listen(PORT, () => {

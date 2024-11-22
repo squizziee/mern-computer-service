@@ -2,6 +2,7 @@
 const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
 const GoogleStrategy = require('passport-google-oidc');
+const FacebookStrategy = require('passport-facebook').Strategy;
 const User = require("../../models/User");
 const UserProfileModel = require("../../models/UserProfile");
 
@@ -38,6 +39,35 @@ class Authenticator {
                 }
             )
         );
+
+        // passport.use(
+        //     new FacebookStrategy(
+        //         {
+        //             clientID: process.env.GOOGLE_CLIENT_ID,
+        //             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        //             callbackURL:
+        //                 '/profile',
+        //         },
+        //         async (accessToken, refreshToken, profile, done) => {
+        //             try {
+        //                 let user = await User.findOne({ google_id: profile.id });
+
+        //                 if (!user) {
+        //                     user = new User({
+        //                         googleId: profile.id,
+        //                         email: profile.emails[0].value,
+        //                         username: profile.displayName,
+        //                     });
+        //                     await user.save();
+        //                 }
+
+        //                 done(null, user);
+        //             } catch (err) {
+        //                 done(err, null);
+        //             }
+        //         }
+        //     )
+        // );
 
         passport.serializeUser(User.serializeUser());
         passport.deserializeUser(User.deserializeUser());
