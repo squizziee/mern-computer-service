@@ -3,6 +3,9 @@ const session = require("express-session");
 const passport = require("passport");
 const MongoStore = require('connect-mongo');
 const mongoose = require('mongoose');
+const LocalStrategy = require("passport-local").Strategy;
+const GoogleStrategy = require('passport-google-oidc').Strategy;
+const FacebookStrategy = require('passport-facebook').Strategy;
 require('dotenv').config()
 
 const cors = require('cors')
@@ -11,6 +14,7 @@ const User = require("./models/User");
 const Authenticator = require("./services/auth/Authenticator");
 const BaseDbInit = require("./services/data/BaseDbInit");
 const DbAccessor = require("./services/data/DbAccessor");
+const UserProfileModel = require("./models/UserProfile");
 
 const PORT = process.env.BACKEND_PORT;
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -21,58 +25,131 @@ const app = express();
 mongoose.connect(MONGODB_URI);
 const db = mongoose.connection;
 
-app.use(cors())
-app.use(express.urlencoded({ extended: false }));
+app.use(cors({
+    origin: "http://localhost:5000", // allow to server to accept request from different origin
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    credentials: true // allow session cookie from browser to pass through
+}))
+
+app.use(express.urlencoded({ extended: true }));
 app.use(session({
     secret: SECRET,
     resave: false,
     saveUninitialized: true,
     store: MongoStore.create({ mongoUrl: MONGODB_URI })
 }));
+// app.use((err, req, res, next) => {
+//     console.error(err);
+//     res.status(500).send('Internal Server Error');
+// });
+const strategy = new LocalStrategy(User.authenticate())
+
+passport.use(strategy);
+passport.use(
+    new GoogleStrategy(
+        {
+            clientID: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            callbackURL:
+                'http://localhost:3000/register/google/callback',
+        },
+        async (request, profile, refreshToken, accessToken, done) => {
+            console.log("Data");
+            console.log(profile); // accessToken
+            const tmp_email = profile.emails[0].value;
+            const tmp_id = profile.id;
+            const tmp_username = profile.displayName;
+            try {
+                let user = await User.findOne({ google_id: profile.id });
+                if (!user) {
+                    profile = new UserProfileModel({
+                        first_name: 'Anonymous',
+                        last_name: 'Client',
+                        email: 'default@example.com',
+                        address: 'None',
+                        phone_number: '+375330000000',
+                        passport_serial: "None",
+                        created_at: new Date()
+                    });
+                    await profile.validate();
+                    await profile.save();
+
+                    User.register(
+                        new User({
+                            google_id: tmp_id,
+                            email: tmp_email,
+                            username: tmp_username,
+                            user_profile: profile
+                        }),
+                        "00000000",
+                        async function (err, msg) {
+                            if (err) {
+                                console.log(err);
+                                console.log("Thrown, deleting trash");
+                                console.log(profile);
+                                await UserProfileModel.deleteOne(profile);
+                            } else {
+
+                            }
+                        }
+                    );
+                }
+                done(null, user);
+            } catch (err) {
+                done(err, null);
+            }
+        }
+    )
+);
+
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+app.use(passport.initialize());
+app.use(passport.session());
 
 const auth = new Authenticator(app);
 
-// app.post('/register', function (req, res) {
-//     User.register(
-//         new User({
-//             username: req.body.email,
-//             email: req.body.email,
-//             first_name: req.body.first_name,
-//             last_name: req.body.last_name,
-//             phone_number: req.body.phone_number,
-//             address: req.body.address,
-//             passport_serial: req.body.passport_serial
-//         }), req.body.password, function (err, msg) {
-//             if (err) {
-//                 res.send(err);
-//             } else {
-//                 res.send({ message: "Successful" });
-//             }
-//         }
-//     )
-// })
-
 app.post('/register', auth.registerDefault);
 
-app.post('/register/google', passport.authenticate("google", {
-    scope: ['email', 'profile']
+app.get('/register/google', passport.authenticate("google", {
+    scope: ['email', 'profile'],
+    successRedirect: process.env.CLIENT_HOME,
+    failureRedirect: process.env.CLIENT_REGISTER,
 }));
 
-app.post('/login/google', passport.authenticate("google", {
-    scope: ['email', 'profile']
-}));
+app.get('/register/google/callback', passport.authenticate("google", {
+    scope: ['email', 'profile'],
+    failureRedirect: process.env.CLIENT_LOGIN,
+    failureMessage: true,
+    successRedirect: process.env.CLIENT_HOME
+}), (req, res) => {
+    console.log("huh")
+});
 
 app.post('/login', passport.authenticate('local', {
-    failureRedirect: '/login-failure',
-    successRedirect: '/login-success'
+    successRedirect: '/api',
+    failureRedirect: '/api'
 }), (err, req, res, next) => {
-    if (err) next(err);
+    if (err) {
+        res.status(501);
+    }
+    res.status(200);
+    res.send("Success");
+});
+
+app.get('/login/status', (req, res) => {
+    if (req.isAuthenticated()) {
+        res.json({ authenticated: true, user: req.user });
+    } else {
+        res.json({ authenticated: false });
+    }
 });
 
 app.post('/logout', (req, res, next) => {
     req.logout(function (err) {
         if (err) { return next(err); }
-        res.redirect('/api');
+        res.status(200);
+        res.send("Success");
     });
 });
 
@@ -96,7 +173,7 @@ app.get('/profile', function (req, res) {
 })
 
 app.get("/api", (req, res) => {
-    res.json({ message: "Hello from server!" });
+    res.json({ message: "Hello from server!", user: req.user });
 });
 
 app.post("/api/init_database", async (req, res, next) => {
@@ -180,6 +257,10 @@ app.put("/api/service/:id", async (req, res, next) => {
         const dbAccess = new DbAccessor();
         const service_id = req.params['id']
         const data = req.body;
+
+        console.log(service_id);
+        console.log(data)
+
         await dbAccess.updateServiceById({
             service_id: service_id,
             service_type_id: data.service_type_id,
@@ -208,11 +289,10 @@ app.delete("/api/service/:id", async (req, res, next) => {
         const dbAccess = new DbAccessor();
         const service_id = req.params['id'];
         await dbAccess.deleteServiceById(service_id);
+        res.status(200);
         res.send({ message: `Service with id of ${service_id} deleted successfully` });
     } catch (err) {
-        console.log(err);
-    } finally {
-        res.redirect("/api")
+
     }
 
 });
@@ -230,6 +310,34 @@ app.get("/api/service", async (req, res) => {
             text_query: data.text_query,
             sort_by: data.sort,
         });
+        res.status(200);
+        res.send(result);
+    } catch (err) {
+        res.status(500);
+        res.send('An error occured while processing request');
+        console.log(err);
+    }
+
+});
+
+app.get("/api/servicetype", async (req, res) => {
+    try {
+        const dbAccess = new DbAccessor();
+        const result = await dbAccess.getServiceTypes();
+        res.status(200);
+        res.send(result);
+    } catch (err) {
+        res.status(500);
+        res.send('An error occured while processing request');
+        console.log(err);
+    }
+
+});
+
+app.get("/api/devicetype", async (req, res) => {
+    try {
+        const dbAccess = new DbAccessor();
+        const result = await dbAccess.getDeviceTypes();
         res.status(200);
         res.send(result);
     } catch (err) {

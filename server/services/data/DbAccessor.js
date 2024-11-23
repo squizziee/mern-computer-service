@@ -30,6 +30,7 @@ class DbAccessor {
     }
 
     async updateServiceById({ service_id, service_type_id, name, description, base_price, device_types }) {
+
         let types = [];
         if (device_types) {
             try {
@@ -183,6 +184,14 @@ class DbAccessor {
             result = result.reverse();
         }
         return result;
+    }
+
+    async getServiceTypes() {
+        return await ServiceTypeModel.find({});
+    }
+
+    async getDeviceTypes() {
+        return await DeviceTypeModel.find({});
     }
 }
 

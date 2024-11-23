@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { Component } from 'react';
 import ReactDOM from 'react-dom/client';
 import Layout from './Layout';
 
-export default function Profile() {
-    return (
-        <>
+class Profile extends Component {
+    render() {
+        return (
             <Layout>
                 <span><i>Profile</i></span>
             </Layout>
-        </>
-    );
+        );
+    }
 }
+
+export default Profile;
