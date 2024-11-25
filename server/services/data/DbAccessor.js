@@ -54,7 +54,7 @@ class DbAccessor {
         return await ServiceModel.findByIdAndDelete(id);
     }
 
-    async getServices({ service_type_id, min_price, max_price, device_types, text_query, sort_by }) {
+    async getServices({ service_type_id_list, min_price, max_price, device_types, text_query, sort_by }) {
         let result;
         let queried = false;
         let dir;
@@ -69,8 +69,8 @@ class DbAccessor {
             dir = '+'
         }
 
-        if (service_type_id) {
-            result = ServiceModel.where('service_type_id').equals(service_type_id);
+        if (service_type_id_list && service_type_id_list.length > 0) {
+            result = ServiceModel.where('service_type._id').in(service_type_id_list);
             queried = true;
         }
         if (min_price) {
@@ -93,14 +93,16 @@ class DbAccessor {
         }
         if (device_types) {
             if (queried) {
-                result = result.find({
-                    device_types: { $in: device_types }
-                });
+                result = result.where('device_types._id').in(device_types);
+                // result = result.find({
+                //     device_types: { $in: device_types }
+                // });
             }
             else {
-                result = ServiceModel.find({
-                    device_types: { $in: device_types }
-                });
+                result = ServiceModel.where('device_types._id').in(device_types);
+                // result = ServiceModel.find({
+                //     device_types: { $in: device_types }
+                // });
                 queried = true;
             }
         }

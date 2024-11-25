@@ -44,29 +44,39 @@ export default function Catalog() {
     return (
         <>
             <Layout>
-                <UserForm name="" basePrice="0" description="" onCommit={fetchServices} />
                 {
-                    editedService ?
-                        <EditBlock service={editedService} key={state} onEditCommited={fetchServices} />
+                    authenticated.authenticated ?
+                        <div className='crud-container'>
+                            <CreateForm name="" basePrice="0" description="" onCommit={fetchServices} />
+                            {
+                                editedService ?
+                                    //<EditBlock service={editedService} key={state} onEditCommited={fetchServices} />
+                                    <EditForm service={editedService} key={state} onCommit={fetchServices} />
+                                    :
+                                    <div></div>
+                            }
+                        </div>
                         :
                         <div></div>
                 }
-                <AddBlock onCommited={fetchServices} />
                 <SearchBlock onSearchResults={setServices} />
-                {
-                    services.map((service, index) => (
-                        <div key={index}>
-                            <ServiceBlock service={service} onDelete={fetchServices} onEdit={(e) => { aboba(service); setState(Date.now()) }} />
-                        </div>
+                <div className='service-block-container'>
+                    {
+                        services.map((service, index) => (
+                            <div key={index}>
+                                <ServiceBlock authenticated={authenticated.authenticated} service={service} onDelete={fetchServices} onEdit={(e) => { aboba(service); setState(Date.now()) }} />
+                            </div>
 
-                    ))
-                }
+                        ))
+                    }
+                </div>
+
             </Layout>
         </>
     );
 }
 
-function ServiceBlock({ service, onDelete, onEdit }) {
+function ServiceBlock({ service, onDelete, onEdit, authenticated }) {
     function deleteService(id) {
         axios({
             method: 'DELETE',
@@ -84,33 +94,75 @@ function ServiceBlock({ service, onDelete, onEdit }) {
     return (
         <>
             <div className='service-block'>
-                <div>{service.name}</div>
-                <div>{service.description}</div>
-                <div>${service.base_price}</div>
-                {/* <div>{service.service_type}</div> */}
-                <div>
+                <div className='service-block-title'>{service.name}</div>
+                <div className='service-block-category'>
+                    <div>{service.service_type.name}</div>
+                    <div>${service.base_price}</div>
+                </div>
+                <div className='service-block-description'>{service.description}</div>
+                <div className='service-block-gadgets'>
                     {
                         service.device_types.map((device_type, index) => (
-                            <div key={index}>
-                                - {device_type.name} -
-                                {device_type.description}
+                            <div className='gadget' key={index}>
+                                <strong>{device_type.name}</strong>
+                                &nbsp;-&nbsp;{device_type.description}
                             </div>
                         ))
                     }
                 </div>
-                <br></br>
-                <button onClick={(e) => { deleteService(service._id) }}>Delete</button>
-                <button onClick={onEdit}>Edit</button>
+                {
+                    authenticated ?
+                        <div className='service-block-buttons'>
+                            <button style={{ backgroundColor: 'red' }} onClick={(e) => { deleteService(service._id) }}>Delete</button>
+                            <button onClick={onEdit}>Edit</button>
+                        </div>
+                        :
+                        <div></div>
+                }
+
             </div>
         </>
     );
 }
 
 function SearchBlock({ onSearchResults }) {
+    const [serviceTypes, setServiceTypes] = useState([]);
+    const [deviceTypes, setDeviceTypes] = useState([]);
+
     const [query, setQuery] = useState("");
+    const [chosenMinPrice, setChosenMinPrice] = useState(0);
+    const [chosenMaxPrice, setChosenMaxPrice] = useState(0);
+    const [sortBy, setSortBy] = useState("");
+    const [chosenServiceTypes, setChosenServiceTypes] = useState({});
+    const [chosenDeviceTypes, setChosenDeviceTypes] = useState([]);
+
+    function assembleQueryParams() {
+        const params = new URLSearchParams({});
+        if (query) params.append('text_query', query);
+        if (chosenMinPrice) params.append('min_price', chosenMinPrice);
+        if (chosenMaxPrice) params.append('max_price', chosenMaxPrice);
+        if (sortBy) params.append('sort', sortBy);
+        try {
+            if (chosenServiceTypes) {
+                for (let s of chosenServiceTypes) {
+                    params.append('service_type_list', s.value);
+                }
+            }
+        } catch (err) { }
+        try {
+            if (chosenDeviceTypes) {
+                for (let d of chosenDeviceTypes) {
+                    params.append('device_types', d.value);
+                }
+            }
+        } catch (err) { }
+
+        return params.toString()
+    }
 
     function search() {
-        let queryString = `/api/service?text_query=${query}`;
+        let params = assembleQueryParams();
+        let queryString = `/api/service?${params}`;
         console.log(queryString);
 
         fetch(queryString)
@@ -121,137 +173,6 @@ function SearchBlock({ onSearchResults }) {
             })
     }
 
-    return (
-        <>
-            <div className='search-block'>
-                <input type='text' name="query" onChange={(e) => setQuery(e.target.value)} />
-                <button onClick={search}>Search</button>
-            </div>
-        </>
-    );
-}
-
-function EditBlock({ service, onEditCommited }) {
-    const [serviceTypes, setServiceTypes] = useState([]);
-    const [deviceTypes, setDeviceTypes] = useState([]);
-    const [chosenName, setChosenName] = useState("");
-    const [chosenBasePrice, setChosenBasePrice] = useState(0);
-    const [chosenDescription, setChosenDescription] = useState("");
-    const [chosenServiceType, setChosenServiceType] = useState({});
-    const [chosenDeviceTypes, setChosenDeviceTypes] = useState([]);
-
-    function fetchServiceTypes() {
-        setChosenName(service.name);
-        setChosenDescription(service.description);
-        setChosenBasePrice(service.base_price)
-        fetch('/api/servicetype')
-            .then((response) => response.json())
-            .then((data) => {
-                let options = [];
-                for (const entry of data) {
-                    options.push({ value: entry._id, label: entry.name })
-                }
-                setServiceTypes(options);
-
-                // set active options
-                for (const st of options) {
-                    if (st.value == service.service_type._id) {
-                        setChosenServiceType(st);
-                        break;
-                    }
-                }
-            })
-            .catch((err) => {
-                console.log(err.message);
-            });
-    }
-
-    function fetchDeviceTypes() {
-        fetch('/api/devicetype')
-            .then((response) => response.json())
-            .then((data) => {
-                let options = [];
-                for (const entry of data) {
-                    options.push({ value: entry._id, label: entry.name })
-                }
-                setDeviceTypes(options);
-
-                // set active options
-                let deviceTypesTmp = service.device_types.map((dt) => { return { value: dt._id, label: dt.name } });
-                console.log(service.device_types);
-                console.log(deviceTypesTmp);
-                setChosenDeviceTypes(deviceTypesTmp);
-            })
-            .catch((err) => {
-                console.log(err.message);
-            });
-    }
-
-    function applyChanges() {
-        console.log(service._id);
-        console.log(chosenServiceType.value);
-        console.log(chosenDeviceTypes);
-        console.log(chosenDescription);
-        console.log(chosenName);
-        console.log(chosenDeviceTypes.map((dt) => dt.value));
-
-        axios({
-            method: 'PUT',
-            url: `api/service/${service._id}`,
-            data: qs.stringify({
-                service_type_id: chosenServiceType.value,
-                name: chosenName,
-                description: chosenDescription,
-                base_price: chosenBasePrice,
-                device_types: chosenDeviceTypes.map((dt) => dt.value),
-            }),
-            headers: { 'content-type': 'application/x-www-form-urlencoded;charset=utf-8' },
-        })
-            .then((data) => {
-                console.log(data);
-                onEditCommited();
-            })
-            .catch((err) => {
-                console.log(err);
-                onEditCommited();
-            })
-    }
-
-    useEffect(() => {
-        fetchServiceTypes();
-        fetchDeviceTypes();
-
-    }, [])
-
-    return (
-        <>
-            <div className='edit-block'>
-                {serviceTypes && deviceTypes ?
-                    <div>
-                        <input type='text' value={chosenName} onChange={(e) => setChosenName(e.target.value)} />
-                        <textarea value={chosenDescription} onChange={(e) => setChosenDescription(e.target.value)} />
-                        <input type='text' value={chosenBasePrice} onChange={(e) => setChosenBasePrice(e.target.value)} />
-                        <Select options={serviceTypes} value={chosenServiceType} onChange={setChosenServiceType} />
-                        <Select options={deviceTypes} value={chosenDeviceTypes} closeMenuOnSelect={false} isMulti onChange={setChosenDeviceTypes} />
-                        <button onClick={applyChanges}>Apply</button>
-                    </div>
-                    :
-                    <div></div>
-                }
-            </div>
-        </>
-    );
-}
-
-function AddBlock({ onCommited }) {
-    const [serviceTypes, setServiceTypes] = useState([]);
-    const [deviceTypes, setDeviceTypes] = useState([]);
-    const [chosenName, setChosenName] = useState("");
-    const [chosenBasePrice, setChosenBasePrice] = useState(0);
-    const [chosenDescription, setChosenDescription] = useState("");
-    const [chosenServiceType, setChosenServiceType] = useState({});
-    const [chosenDeviceTypes, setChosenDeviceTypes] = useState([]);
-
     function fetchServiceTypes() {
         fetch('/api/servicetype')
             .then((response) => response.json())
@@ -282,35 +203,6 @@ function AddBlock({ onCommited }) {
             });
     }
 
-    function createNew() {
-        console.log(chosenServiceType.value);
-        console.log(chosenDeviceTypes);
-        console.log(chosenDescription);
-        console.log(chosenName);
-        console.log(chosenDeviceTypes.map((dt) => dt.value));
-
-        axios({
-            method: 'POST',
-            url: `api/service`,
-            data: qs.stringify({
-                service_type_id: chosenServiceType.value,
-                name: chosenName,
-                description: chosenDescription,
-                base_price: chosenBasePrice,
-                device_types: chosenDeviceTypes.map((dt) => dt.value),
-            }),
-            headers: { 'content-type': 'application/x-www-form-urlencoded;charset=utf-8' },
-        })
-            .then((data) => {
-                console.log(data);
-                onCommited();
-            })
-            .catch((err) => {
-                console.log(err);
-                onCommited();
-            })
-    }
-
     useEffect(() => {
         fetchServiceTypes();
         fetchDeviceTypes();
@@ -318,15 +210,16 @@ function AddBlock({ onCommited }) {
 
     return (
         <>
-            <div className='edit-block'>
+            <div className='search-block general-block'>
+                <div className='general-block-title'>Search</div>
+                <input type='text' placeholder='Search anything...' onChange={(e) => setQuery(e.target.value)} />
+                <input type='number' placeholder='Minimum price' onChange={(e) => setChosenMinPrice(e.target.value)} />
+                <input type='number' placeholder='Maximum price' onChange={(e) => setChosenMaxPrice(e.target.value)} />
                 {serviceTypes && deviceTypes ?
                     <div>
-                        <input type='text' value={chosenName} onChange={(e) => setChosenName(e.target.value)} />
-                        <textarea value={chosenDescription} onChange={(e) => setChosenDescription(e.target.value)} />
-                        <input type='text' value={chosenBasePrice} onChange={(e) => setChosenBasePrice(e.target.value)} />
-                        <Select options={serviceTypes} value={chosenServiceType} onChange={setChosenServiceType} />
-                        <Select options={deviceTypes} value={chosenDeviceTypes} closeMenuOnSelect={false} isMulti onChange={setChosenDeviceTypes} />
-                        <button onClick={createNew}>Create</button>
+                        <Select placeholder='Service types' options={serviceTypes} closeMenuOnSelect={false} isMulti onChange={setChosenServiceTypes} />
+                        <Select placeholder='Device types' options={deviceTypes} closeMenuOnSelect={false} isMulti onChange={setChosenDeviceTypes} />
+                        <button onClick={search}>Search</button>
                     </div>
                     :
                     <div></div>
@@ -336,7 +229,7 @@ function AddBlock({ onCommited }) {
     );
 }
 
-class UserForm extends React.Component {
+class CreateForm extends React.Component {
     constructor(props) {
         super(props);
 
@@ -484,38 +377,259 @@ class UserForm extends React.Component {
     }
 
     render() {
-        let nameColor = this.state.nameValid === true ? "green" : "red";
-        let descriptionColor = this.state.descriptionValid === true ? "green" : "red";
-        let basePriceColor = this.state.basePriceValid === true ? "green" : "red";
+        let nameColor = this.state.nameValid === true ? "#f7f7f7" : "pink";
+        let descriptionColor = this.state.descriptionValid === true ? "#f7f7f7" : "pink";
+        let basePriceColor = this.state.basePriceValid === true ? "#f7f7f7" : "pink";
         return (
-            <form onSubmit={this.handleSubmit}>
-                <p>
-                    <label>Name</label><br />
-                    <input type="text" value={this.state.name}
-                        onChange={this.onNameChange} style={{ borderColor: nameColor }} />
-                </p>
-                <p>
-                    <label>Description</label><br />
-                    <textarea value={this.state.description}
-                        onChange={this.onDescriptionChange} style={{ borderColor: descriptionColor, resize: 'none' }} />
-                </p>
-                <p>
-                    <label>Base price</label><br />
-                    <input type="number" value={this.state.basePrice}
-                        onChange={this.onBasePriceChange} style={{ borderColor: basePriceColor }} />
-                </p>
-                {
-                    this.state.serviceTypes && this.state.deviceTypes ?
-                        <div>
-                            <Select options={this.state.serviceTypes} onChange={this.onServiceTypeChange} />
-                            <Select options={this.state.deviceTypes} closeMenuOnSelect={false} isMulti onChange={this.onDeviceTypesChange} />
-                        </div>
-                        :
-                        <div></div>
-                }
+            <div className='general-block'>
+                <div className='general-block-title'>Create new</div>
+                <form onSubmit={this.handleSubmit}>
+                    <p>
+                        <label>Name</label><br />
+                        <input type="text" value={this.state.name}
+                            onChange={this.onNameChange} style={{ backgroundColor: nameColor }} />
+                    </p>
+                    <p>
+                        <label>Description</label><br />
+                        <textarea value={this.state.description}
+                            onChange={this.onDescriptionChange} style={{ backgroundColor: descriptionColor, resize: 'none' }} />
+                    </p>
+                    <p>
+                        <label>Base price</label><br />
+                        <input type="number" value={this.state.basePrice}
+                            onChange={this.onBasePriceChange} style={{ backgroundColor: basePriceColor }} />
+                    </p>
+                    {
+                        this.state.serviceTypes && this.state.deviceTypes ?
+                            <div>
+                                <Select options={this.state.serviceTypes} onChange={this.onServiceTypeChange} />
+                                <Select options={this.state.deviceTypes} closeMenuOnSelect={false} isMulti onChange={this.onDeviceTypesChange} />
+                            </div>
+                            :
+                            <div></div>
+                    }
 
-                <input type="submit" value="Add" />
-            </form>
+                    <button>Create</button>
+                </form>
+            </div>
+
+        );
+    }
+}
+
+class EditForm extends React.Component {
+    constructor(props) {
+        super(props);
+
+        let name = "";
+        let nameIsValid = this.validateName(name);
+
+        let description = "";
+        let descriptionIsValid = this.validateDescription(description);
+
+        let basePrice = 0;
+        let basePriceIsValid = this.validateBasePrice(basePrice);
+
+        this.state = {
+            name: name,
+            nameValid: nameIsValid,
+            description: description,
+            descriptionValid: descriptionIsValid,
+            basePrice: basePrice,
+            basePriceValid: basePriceIsValid
+        };
+
+        this.onNameChange = this.onNameChange.bind(this);
+        this.onDescriptionChange = this.onDescriptionChange.bind(this);
+        this.onBasePriceChange = this.onBasePriceChange.bind(this);
+        this.onServiceTypeChange = this.onServiceTypeChange.bind(this);
+        this.onDeviceTypesChange = this.onDeviceTypesChange.bind(this);
+        this.handleSubmit = this.handleSubmit.bind(this);
+    }
+
+    async componentDidMount() {
+        this.setState({
+            name: this.props.service.name,
+            nameValid: this.validateName(this.props.service.name),
+            description: this.props.service.description,
+            descriptionValid: this.validateDescription(this.props.service.description),
+            basePrice: this.props.service.base_price,
+            basePriceValid: this.validateBasePrice(this.props.service.base_price)
+        });
+        let serviceTypeData =
+            await fetch('/api/servicetype')
+                .then((response) => response.json())
+                .then((data) => {
+                    let options = [];
+                    for (const entry of data) {
+                        options.push({ value: entry._id, label: entry.name })
+                    }
+                    return options;
+                })
+                .catch((err) => {
+                    console.log(err.message);
+                });
+
+        for (const st of serviceTypeData) {
+            if (st.value == this.props.service.service_type._id) {
+                this.setState({
+                    selectedServiceType: st,
+                    selectedServiceTypeValid: this.validateServiceType(st)
+                });
+                break;
+            }
+        }
+
+        let deviceTypeData =
+            await fetch('/api/devicetype')
+                .then((response) => response.json())
+                .then((data) => {
+                    let options = [];
+                    for (const entry of data) {
+                        options.push({ value: entry._id, label: entry.name })
+                    }
+                    return options;
+                })
+                .catch((err) => {
+                    console.log(err.message);
+                });
+
+        let deviceTypesTmp = this.props.service.device_types.map((dt) => { return { value: dt._id, label: dt.name } });
+        this.setState({
+            selectedDeviceTypes: deviceTypesTmp,
+            selectedDeviceTypesValid: this.validateDeviceTypes(deviceTypesTmp)
+        });
+
+        this.setState({
+            serviceTypes: serviceTypeData,
+            deviceTypes: deviceTypeData
+        })
+    }
+
+    validateName(name) {
+        return name.length > 1 && name.length < 100;
+    }
+
+    validateDescription(description) {
+        return description.length > 1 && description.length < 1000;
+    }
+
+    validateBasePrice(basePrice) {
+        return basePrice > 0;
+    }
+
+    validateDeviceTypes(deviceTypes) {
+        return deviceTypes.length > 0;
+    }
+
+    validateServiceType(serviceType) {
+        return !!serviceType;
+    }
+
+    onNameChange(e) {
+        var val = e.target.value;
+        console.log(val);
+        var valid = this.validateName(val);
+        this.setState({ name: val, nameValid: valid });
+    }
+
+    onDescriptionChange(e) {
+        var val = e.target.value;
+        console.log(val);
+        var valid = this.validateDescription(val);
+        this.setState({ description: val, descriptionValid: valid });
+    }
+
+    onBasePriceChange(e) {
+        var val = e.target.value;
+        console.log(val);
+        var valid = this.validateBasePrice(val);
+        this.setState({ basePrice: val, basePriceValid: valid });
+    }
+
+    onDeviceTypesChange(e) {
+        console.log(e);
+        var valid = this.validateDeviceTypes(e);
+        this.setState({ selectedDeviceTypes: e, selectedDeviceTypesValid: valid });
+    }
+
+    onServiceTypeChange(e) {
+        console.log(e);
+        var valid = this.validateServiceType(e);
+        this.setState({ selectedServiceType: e, selectedServiceTypeValid: valid });
+    }
+
+    handleSubmit(e) {
+        e.preventDefault();
+        console.log(this.state);
+
+        if (this.state.nameValid &&
+            this.state.descriptionValid &&
+            this.state.basePriceValid &&
+            this.state.selectedDeviceTypesValid &&
+            this.state.selectedServiceTypeValid) {
+            console.log("Valid");
+            console.log(this.props.service._id);
+            axios({
+                method: 'PUT',
+                url: `api/service/${this.props.service._id}`,
+                data: qs.stringify({
+                    service_type_id: this.state.selectedServiceType.value,
+                    name: this.state.name,
+                    description: this.state.description,
+                    base_price: this.state.basePrice,
+                    device_types: this.state.selectedDeviceTypes.map((dt) => dt.value),
+                }),
+                headers: { 'content-type': 'application/x-www-form-urlencoded;charset=utf-8' },
+            })
+                .then((data) => {
+                    console.log(data);
+                    this.props.onCommit();
+                })
+                .catch((err) => {
+                    console.log(err);
+                    this.props.onCommit();
+                })
+        }
+    }
+
+    render() {
+        let nameColor = this.state.nameValid === true ? "#f7f7f7" : "pink";
+        let descriptionColor = this.state.descriptionValid === true ? "#f7f7f7" : "pink";
+        let basePriceColor = this.state.basePriceValid === true ? "#f7f7f7" : "pink";
+        return (
+            <div className='general-block'>
+                <div className='general-block-title'>Edit</div>
+                <form onSubmit={this.handleSubmit}>
+                    <p>
+                        <label>Name</label><br />
+                        <input type="text" value={this.state.name}
+                            onChange={this.onNameChange} style={{ backgroundColor: nameColor }} />
+                    </p>
+                    <p>
+                        <label>Description</label><br />
+                        <textarea value={this.state.description}
+                            onChange={this.onDescriptionChange} style={{ backgroundColor: descriptionColor, resize: 'none' }} />
+                    </p>
+                    <p>
+                        <label>Base price</label><br />
+                        <input type="number" value={this.state.basePrice}
+                            onChange={this.onBasePriceChange} style={{ backgroundColor: basePriceColor }} />
+                    </p>
+                    {
+                        this.state.serviceTypes && this.state.deviceTypes ?
+                            <div>
+                                <Select options={this.state.serviceTypes} value={this.state.selectedServiceType} onChange={this.onServiceTypeChange} />
+                                <Select options={this.state.deviceTypes} value={this.state.selectedDeviceTypes} closeMenuOnSelect={false} isMulti onChange={this.onDeviceTypesChange} />
+                            </div>
+                            :
+                            <div></div>
+                    }
+
+                    <button>Apply</button>
+                </form>
+            </div>
+
         );
     }
 }

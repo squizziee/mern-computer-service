@@ -303,7 +303,7 @@ app.get("/api/service", async (req, res) => {
         const dbAccess = new DbAccessor();
         const data = req.query;
         const result = await dbAccess.getServices({
-            service_type_id: data.service_type_id,
+            service_type_id_list: data.service_type_list,
             min_price: data.min_price,
             max_price: data.max_price,
             device_types: data.device_types,
