@@ -136,12 +136,21 @@ function SearchBlock({ onSearchResults }) {
     const [chosenServiceTypes, setChosenServiceTypes] = useState({});
     const [chosenDeviceTypes, setChosenDeviceTypes] = useState([]);
 
+    const sortOptions = [
+        { value: 'service_type', label: 'Sort by service type' },
+        { value: '-service_type', label: 'Sort by service type (reverse)' },
+        { value: 'name', label: 'Sort by name' },
+        { value: '-name', label: 'Sort by name (reverse)' },
+        { value: 'base_price', label: 'Sort from cheap to expensive' },
+        { value: '-base_price', label: 'Sort from expensive to cheap' },
+    ]
+
     function assembleQueryParams() {
         const params = new URLSearchParams({});
         if (query) params.append('text_query', query);
         if (chosenMinPrice) params.append('min_price', chosenMinPrice);
         if (chosenMaxPrice) params.append('max_price', chosenMaxPrice);
-        if (sortBy) params.append('sort', sortBy);
+        if (sortBy) params.append('sort', sortBy.value);
         try {
             if (chosenServiceTypes) {
                 for (let s of chosenServiceTypes) {
@@ -219,6 +228,7 @@ function SearchBlock({ onSearchResults }) {
                     <div>
                         <Select placeholder='Service types' options={serviceTypes} closeMenuOnSelect={false} isMulti onChange={setChosenServiceTypes} />
                         <Select placeholder='Device types' options={deviceTypes} closeMenuOnSelect={false} isMulti onChange={setChosenDeviceTypes} />
+                        <Select placeholder='Sort by' options={sortOptions} onChange={setSortBy} />
                         <button onClick={search}>Search</button>
                     </div>
                     :
