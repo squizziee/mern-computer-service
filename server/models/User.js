@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const passportLocalMongoose = require('passport-local-mongoose');
+const { UserProfileSchema } = require('./UserProfile');
 const Schema = mongoose.Schema;
 
 const UserSchema = new Schema({
@@ -22,7 +23,7 @@ const UserSchema = new Schema({
         }
     },
     user_profile: {
-        type: mongoose.Schema.Types.ObjectId, ref: 'UserProfile',
+        type: UserProfileSchema,
         required: true
     },
     google_id: {
@@ -40,4 +41,7 @@ const UserSchema = new Schema({
 UserSchema.plugin(passportLocalMongoose);
 
 const UserModel = mongoose.model('User', UserSchema);
-module.exports = UserModel;
+module.exports = {
+    UserModel,
+    UserSchema
+}

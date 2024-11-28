@@ -10,11 +10,11 @@ require('dotenv').config()
 
 const cors = require('cors')
 
-const User = require("./models/User");
+const { UserModel } = require("./models/User");
 const Authenticator = require("./services/auth/Authenticator");
 const BaseDbInit = require("./services/data/BaseDbInit");
 const DbAccessor = require("./services/data/DbAccessor");
-const UserProfileModel = require("./models/UserProfile");
+const { UserProfileModel } = require("./models/UserProfile");
 
 const PORT = process.env.BACKEND_PORT;
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -42,7 +42,7 @@ app.use(session({
 //     console.error(err);
 //     res.status(500).send('Internal Server Error');
 // });
-const strategy = new LocalStrategy(User.authenticate())
+const strategy = new LocalStrategy(UserModel.authenticate())
 
 passport.use(strategy);
 passport.use(
@@ -60,7 +60,7 @@ passport.use(
             const tmp_id = profile.id;
             const tmp_username = profile.displayName;
             try {
-                let user = await User.findOne({ google_id: profile.id });
+                let user = await UserModel.findOne({ google_id: profile.id });
                 if (!user) {
                     profile = new UserProfileModel({
                         first_name: 'Anonymous',
@@ -74,8 +74,8 @@ passport.use(
                     await profile.validate();
                     await profile.save();
 
-                    User.register(
-                        new User({
+                    UserModel.register(
+                        new UserModel({
                             google_id: tmp_id,
                             email: tmp_email,
                             username: tmp_username,
@@ -102,12 +102,14 @@ passport.use(
     )
 );
 
-passport.serializeUser(User.serializeUser());
-passport.deserializeUser(User.deserializeUser());
+passport.serializeUser(UserModel.serializeUser());
+passport.deserializeUser(UserModel.deserializeUser());
 app.use(passport.initialize());
 app.use(passport.session());
 
 const auth = new Authenticator(app);
+
+require('./routes/service_type_routes')(app);
 
 app.post('/register', auth.registerDefault);
 
@@ -131,7 +133,7 @@ app.post('/login', passport.authenticate('local', {
     failureRedirect: '/api'
 }), (err, req, res, next) => {
     if (err) {
-        res.status(501);
+        res.status(500);
     }
     res.status(200);
     res.send("Success");
@@ -189,7 +191,7 @@ app.post("/api/init_database", async (req, res, next) => {
         await tmp.initializeServices();
         res.status(200);
     } catch (err) {
-        res.status(501);
+        res.status(500);
         res.send('An error occured while processing request');
         console.log(err);
         return;
@@ -239,7 +241,7 @@ app.post("/api/service", async (req, res, next) => {
         })
         res.status(200);
     } catch (err) {
-        res.status(501);
+        res.status(500);
         res.send('An error occured while processing request');
         console.log(err);
     } finally {
@@ -271,7 +273,7 @@ app.put("/api/service/:id", async (req, res, next) => {
         })
         res.status(200);
     } catch (err) {
-        res.status(501);
+        res.status(500);
         res.send('An error occured while processing request');
         console.log(err);
     } finally {
@@ -310,20 +312,6 @@ app.get("/api/service", async (req, res) => {
             text_query: data.text_query,
             sort_by: data.sort,
         });
-        res.status(200);
-        res.send(result);
-    } catch (err) {
-        res.status(500);
-        res.send('An error occured while processing request');
-        console.log(err);
-    }
-
-});
-
-app.get("/api/servicetype", async (req, res) => {
-    try {
-        const dbAccess = new DbAccessor();
-        const result = await dbAccess.getServiceTypes();
         res.status(200);
         res.send(result);
     } catch (err) {

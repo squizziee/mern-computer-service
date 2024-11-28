@@ -1,15 +1,45 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Link } from "react-router-dom";
+import { useEffect, useState } from 'react';
+import { FaBeer, FaMicrochip, FaScrewdriver, FaUser } from 'react-icons/fa';
 
 export default function Navigation() {
+    const [authenticated, setAuthenticated] = useState({});
+
+    useEffect(() => {
+        fetch('/login/status')
+            .then((response) => response.json())
+            .then((data) => {
+                console.log(data);
+                setAuthenticated(data);
+            })
+    }, [])
+
     return (
         <div className='navigation'>
-            <Link to="/">Home</Link>
-            <Link to="/catalog">Catalog</Link>
-            <Link to="/login">Login</Link>
-            <Link to="/register">Register</Link>
-            <Link to="/profile">Profile</Link>
+            <div className='main-routes'>
+                <FaMicrochip className='navbar-logo' size={30} />
+                <Link to="/">Home</Link>
+                <Link to="/catalog">Catalog</Link>
+                <Link to="/login">Login</Link>
+                <Link to="/register">Register</Link>
+            </div>
+            <div className='auth-info'>
+                {
+                    authenticated.authenticated ?
+                        <div>
+                            <Link to="/profile">
+                                {authenticated.user.user_profile.first_name} {authenticated.user.user_profile.last_name}
+                            </Link>
+                            <span>
+                                {authenticated.user.email}
+                            </span>
+                        </div>
+                        :
+                        <div></div>
+                }
+            </div>
         </div>
     );
 }

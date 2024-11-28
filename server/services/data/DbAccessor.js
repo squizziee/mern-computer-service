@@ -2,8 +2,11 @@ const ServiceModel = require("../../models/Service");
 const mongoose = require('mongoose');
 const { ServiceTypeModel } = require("../../models/ServiceType");
 const { DeviceTypeModel } = require("../../models/DeviceType");
+const { UserProfileModel } = require("../../models/UserProfile");
 
 class DbAccessor {
+
+    // services
     async getServiceById(id) {
         return await ServiceModel.findById(id);
     }
@@ -188,12 +191,83 @@ class DbAccessor {
         return result;
     }
 
+    // service types
+    async getServiceTypeById(service_type_id) {
+        return await ServiceTypeModel.findById(service_type_id);
+    }
+
+    async addServiceType({ name, description }) {
+        let now = new Date();
+        let newST = new ServiceTypeModel({
+            name: name,
+            description: description,
+            created_at: now,
+            last_updated_at: now
+        });
+        await newST.save();
+    }
+
+    async updateServiceTypeById({ service_type_id, name, description }) {
+        let now = new Date();
+        await ServiceTypeModel.findByIdAndUpdate(service_type_id, {
+            name: name,
+            description: description,
+            last_updated_at: now
+        });
+    }
+
+    async deleteServiceTypeById(service_type_id) {
+        await ServiceTypeModel.findByIdAndDelete(service_type_id);
+    }
+
     async getServiceTypes() {
         return await ServiceTypeModel.find({});
     }
 
+    // device types
+    async getDeviceTypeById(device_type_id) {
+        return await DeviceTypeModel.findById(device_type_id);
+    }
+
+    async addDeviceType({ name, description }) {
+        let now = new Date();
+        let newDT = new DeviceTypeModel({
+            name: name,
+            description: description,
+            created_at: now,
+            last_updated_at: now
+        });
+        await newDT.save();
+    }
+
+    async updateDeviceTypeById({ device_type_id, name, description }) {
+        let now = new Date();
+        await DeviceTypeModel.findByIdAndUpdate(device_type_id, {
+            name: name,
+            description: description,
+            last_updated_at: now
+        });
+    }
+
+    async deleteDeviceTypeById(device_type_id) {
+        await ServiceTypeModel.findByIdAndDelete(device_type_id);
+    }
+
     async getDeviceTypes() {
         return await DeviceTypeModel.find({});
+    }
+
+    // user profiles
+    async updateUserProfileById({ user_profile_id, first_name, last_name, phone_number, address, passport_serial }) {
+        let now = new Date();
+        await UserProfileModel.findByIdAndUpdate(user_profile_id, {
+            first_name: first_name,
+            last_name: last_name,
+            phone_number: phone_number,
+            address: address,
+            passport_serial: passport_serial,
+            last_updated_at: now
+        });
     }
 }
 

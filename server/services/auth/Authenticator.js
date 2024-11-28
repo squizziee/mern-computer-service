@@ -3,8 +3,8 @@ const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
 const GoogleStrategy = require('passport-google-oidc');
 const FacebookStrategy = require('passport-facebook').Strategy;
-const User = require("../../models/User");
-const UserProfileModel = require("../../models/UserProfile");
+const { UserModel } = require("../../models/User");
+const { UserProfileModel } = require("../../models/UserProfile");
 require('dotenv').config()
 
 class Authenticator {
@@ -78,6 +78,7 @@ class Authenticator {
     }
 
     async registerDefault(req, res) {
+        let now = new Date();
         let profile;
         try {
             profile = new UserProfileModel({
@@ -87,13 +88,14 @@ class Authenticator {
                 address: 'None',
                 phone_number: '+375330000000',
                 passport_serial: "None",
-                created_at: new Date()
+                created_at: now,
+                last_updated_at: now
             });
             await profile.validate();
             await profile.save();
 
-            User.register(
-                new User({
+            UserModel.register(
+                new UserModel({
                     username: req.body.username,
                     email: req.body.email,
                     user_profile: profile

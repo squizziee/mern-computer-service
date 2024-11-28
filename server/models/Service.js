@@ -23,12 +23,29 @@ const ServiceSchema = new Schema({
     base_price: {
         type: Number,
         required: true,
+        validate: {
+            validator: function (v) {
+                return v > 0;
+            },
+            message: props => `${props.value} is not a valid phone number`
+        }
     },
     device_types: {
         type: [DeviceTypeSchema],
         required: true
     },
+    created_at: {
+        type: Date,
+        required: true
+    },
+    last_updated_at: {
+        type: Date,
+        required: true
+    },
 });
 
 const ServiceModel = mongoose.model('Service', ServiceSchema);
-module.exports = ServiceModel;
+module.exports = {
+    ServiceModel,
+    ServiceSchema
+};

@@ -40,8 +40,15 @@ const UserProfileSchema = new Schema({
     created_at: {
         type: Date,
         required: true
-    }
+    },
+    last_updated_at: {
+        type: Date,
+        required: true
+    },
 });
 
 const UserProfileModel = mongoose.model('UserProfile', UserProfileSchema);
-module.exports = UserProfileModel;
+module.exports = {
+    UserProfileModel,
+    UserProfileSchema
+}

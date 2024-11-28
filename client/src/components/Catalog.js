@@ -4,6 +4,7 @@ import Layout from './Layout';
 import axios from 'axios'
 import qs from 'qs'
 import Select from 'react-select'
+import { Link } from "react-router-dom";
 
 export default function Catalog() {
     const [services, setServices] = useState([]);
@@ -91,6 +92,10 @@ function ServiceBlock({ service, onDelete, onEdit, authenticated }) {
             })
     }
 
+    function onInfo(e) {
+        window.location.href = `/catalog/${service._id}`;
+    }
+
     return (
         <>
             <div className='service-block'>
@@ -99,7 +104,14 @@ function ServiceBlock({ service, onDelete, onEdit, authenticated }) {
                     <div>{service.service_type.name}</div>
                     <div>${service.base_price}</div>
                 </div>
-                <div className='service-block-description'>{service.description}</div>
+                <div className='service-block-description'>
+                    {
+                        service.description.length > 80 ?
+                            <span>{service.description.substring(0, 80)}...</span>
+                            :
+                            <span>{service.description}</span>
+                    }
+                </div>
                 <div className='service-block-gadgets'>
                     {
                         service.device_types.map((device_type, index) => (
@@ -115,9 +127,13 @@ function ServiceBlock({ service, onDelete, onEdit, authenticated }) {
                         <div className='service-block-buttons'>
                             <button style={{ backgroundColor: 'red' }} onClick={(e) => { deleteService(service._id) }}>Delete</button>
                             <button onClick={onEdit}>Edit</button>
+                            <button onClick={onInfo}>View</button>
                         </div>
                         :
-                        <div></div>
+                        <div className='service-block-buttons'>
+                            <button onClick={onInfo}>View</button>
+                        </div>
+
                 }
 
             </div>
@@ -387,9 +403,9 @@ class CreateForm extends React.Component {
     }
 
     render() {
-        let nameColor = this.state.nameValid === true ? "#f7f7f7" : "pink";
-        let descriptionColor = this.state.descriptionValid === true ? "#f7f7f7" : "pink";
-        let basePriceColor = this.state.basePriceValid === true ? "#f7f7f7" : "pink";
+        let nameColor = this.state.nameValid === true ? "transparent" : "pink";
+        let descriptionColor = this.state.descriptionValid === true ? "transparent" : "pink";
+        let basePriceColor = this.state.basePriceValid === true ? "transparent" : "pink";
         return (
             <div className='general-block'>
                 <div className='general-block-title'>Create new</div>
@@ -397,17 +413,17 @@ class CreateForm extends React.Component {
                     <p>
                         <label>Name</label><br />
                         <input type="text" value={this.state.name}
-                            onChange={this.onNameChange} style={{ backgroundColor: nameColor }} />
+                            onChange={this.onNameChange} style={{ borderColor: nameColor }} />
                     </p>
                     <p>
                         <label>Description</label><br />
                         <textarea value={this.state.description}
-                            onChange={this.onDescriptionChange} style={{ backgroundColor: descriptionColor, resize: 'none' }} />
+                            onChange={this.onDescriptionChange} style={{ borderColor: descriptionColor, resize: 'none' }} />
                     </p>
                     <p>
                         <label>Base price</label><br />
                         <input type="number" value={this.state.basePrice}
-                            onChange={this.onBasePriceChange} style={{ backgroundColor: basePriceColor }} />
+                            onChange={this.onBasePriceChange} style={{ borderColor: basePriceColor }} />
                     </p>
                     {
                         this.state.serviceTypes && this.state.deviceTypes ?
