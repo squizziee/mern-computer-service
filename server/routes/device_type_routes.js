@@ -1,15 +1,15 @@
 const DbAccessor = require("../services/data/DbAccessor");
 
 module.exports = function (app) {
-    app.get("/api/servicetype/:id", async (req, res) => {
+    app.get("/api/devicetype/:id", async (req, res) => {
         try {
             const dbAccess = new DbAccessor();
             const id = req.params['id'];
-            const result = await dbAccess.getServiceTypeById(id);
+            const result = await dbAccess.getDeviceTypeById(id);
 
             if (!result) {
                 res.status(404);
-                res.send(`No service type with id ${id} found`)
+                res.send(`No device type with id ${id} found`)
             }
             else {
                 res.status(200);
@@ -23,7 +23,7 @@ module.exports = function (app) {
 
     });
 
-    app.post("/api/servicetype", async (req, res, next) => {
+    app.post("/api/devicetype", async (req, res, next) => {
         if (!req.user) {
             res.status(401);
             res.send("Not authenticated");
@@ -32,12 +32,12 @@ module.exports = function (app) {
         try {
             const dbAccess = new DbAccessor();
             const data = req.body;
-            await dbAccess.addServiceType({
+            await dbAccess.addDeviceType({
                 name: data.name,
                 description: data.description,
             })
             res.status(200);
-            res.send('Service type created');
+            res.send('Device type created');
         } catch (err) {
             res.status(500);
             res.send('An error occured while processing request');
@@ -45,7 +45,7 @@ module.exports = function (app) {
         }
     });
 
-    app.put("/api/servicetype/:id", async (req, res, next) => {
+    app.put("/api/devicetype/:id", async (req, res, next) => {
         if (!req.user) {
             res.status(401);
             res.send("Not authenticated");
@@ -56,13 +56,13 @@ module.exports = function (app) {
             const id = req.params['id']
             const data = req.body;
 
-            await dbAccess.updateServiceTypeById({
-                service_type_id: id,
+            await dbAccess.updateDeviceTypeById({
+                device_type_id: id,
                 name: data.name,
                 description: data.description,
             })
             res.status(200);
-            res.send('Service type updated');
+            res.send('Device type updated');
         } catch (err) {
             res.status(500);
             res.send('An error occured while processing request');
@@ -70,7 +70,7 @@ module.exports = function (app) {
         }
     });
 
-    app.delete("/api/servicetype/:id", async (req, res, next) => {
+    app.delete("/api/devicetype/:id", async (req, res, next) => {
         if (!req.user) {
             res.status(401);
             res.send("Not authenticated");
@@ -79,9 +79,9 @@ module.exports = function (app) {
         try {
             const dbAccess = new DbAccessor();
             const id = req.params['id'];
-            await dbAccess.deleteServiceTypeById(id);
+            await dbAccess.deleteDeviceTypeById(id);
             res.status(200);
-            res.send({ message: `Service type with id of ${id} deleted successfully` });
+            res.send({ message: `Device type with id of ${id} deleted successfully` });
         } catch (err) {
             res.status(500);
             res.send('An error occured while processing request');
@@ -89,10 +89,10 @@ module.exports = function (app) {
         }
     });
 
-    app.get("/api/servicetype", async (req, res) => {
+    app.get("/api/devicetype", async (req, res) => {
         try {
             const dbAccess = new DbAccessor();
-            const result = await dbAccess.getServiceTypes();
+            const result = await dbAccess.getDeviceTypes();
             res.status(200);
             res.send(result);
         } catch (err) {
@@ -100,6 +100,5 @@ module.exports = function (app) {
             res.send('An error occured while processing request');
             console.log(err);
         }
-
     });
 }

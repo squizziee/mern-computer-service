@@ -1,6 +1,4 @@
 const mongoose = require('mongoose');
-const { DeviceTypeSchema } = require('./DeviceType');
-const { ServiceTypeSchema } = require('./ServiceType');
 const { ServiceSchema } = require('./Service');
 const { UserSchema } = require('./User');
 const Schema = mongoose.Schema;
@@ -14,9 +12,17 @@ const OrderSchema = new Schema({
         type: UserSchema,
         required: true,
     },
-    client_additional_info: {
+    additional_info: {
         type: String,
         maxlength: [1000, 'Maximum length is 1000']
+    },
+    isCancelled: {
+        type: Boolean,
+        required: true,
+    },
+    isCompeleted: {
+        type: Boolean,
+        required: true,
     },
     created_at: {
         type: Date,

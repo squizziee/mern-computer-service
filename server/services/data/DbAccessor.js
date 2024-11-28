@@ -1,17 +1,20 @@
-const ServiceModel = require("../../models/Service");
+const { ServiceModel } = require("../../models/Service");
 const mongoose = require('mongoose');
 const { ServiceTypeModel } = require("../../models/ServiceType");
 const { DeviceTypeModel } = require("../../models/DeviceType");
 const { UserProfileModel } = require("../../models/UserProfile");
+const OrderModel = require("../../models/Order");
+const { UserModel } = require("../../models/User");
 
 class DbAccessor {
 
     // services
     async getServiceById(id) {
-        return await ServiceModel.findById(id);
+        return await ServiceModel.findById(id).populate('device_types').populate('service_type');
     }
 
     async addService({ service_type_id, name, description, base_price, device_types }) {
+        let now = new Date();
         let types = [];
         try {
             for (let id of device_types) {
@@ -27,13 +30,15 @@ class DbAccessor {
             description: description,
             base_price: base_price,
             device_types: types,
+            created_at: now,
+            last_updated_at: now,
         })
         await tmp.save();
         return tmp.id;
     }
 
     async updateServiceById({ service_id, service_type_id, name, description, base_price, device_types }) {
-
+        let now = new Date();
         let types = [];
         if (device_types) {
             try {
@@ -50,6 +55,7 @@ class DbAccessor {
             description: description,
             base_price: base_price,
             device_types: types,
+            last_updated_at: now
         })
     }
 
@@ -117,13 +123,13 @@ class DbAccessor {
                         $regex: new RegExp(`${text_query}`),
                         $options: 'i'
                     }
-                })
+                }).populate('service_type').populate('device_types');
                 const result2 = await copy.find({
                     name: {
                         $regex: new RegExp(`${text_query}`),
                         $options: 'i'
                     }
-                })
+                }).populate('service_type').populate('device_types');
                 try {
                     result = [...new Map([...result1, ...result2].map(item => [item._id.toString(), item])).values()];
                 } catch (err) {
@@ -136,13 +142,13 @@ class DbAccessor {
                         $regex: new RegExp(`${text_query}`),
                         $options: 'i'
                     }
-                })
+                }).populate('service_type').populate('device_types');
                 const result2 = await ServiceModel.find({
                     name: {
                         $regex: new RegExp(`${text_query}`),
                         $options: 'i'
                     }
-                })
+                }).populate('service_type').populate('device_types');
                 try {
                     result = [...new Map([...result1, ...result2].map(item => [item._id.toString(), item])).values()];
                 } catch (err) {
@@ -156,6 +162,7 @@ class DbAccessor {
             if (!queried) {
                 result = ServiceModel.find({});
             }
+            result = result.populate('service_type').populate('device_types');
             return this.#sort_result(await result.exec(), sort_by, dir);
         }
     }
@@ -250,7 +257,7 @@ class DbAccessor {
     }
 
     async deleteDeviceTypeById(device_type_id) {
-        await ServiceTypeModel.findByIdAndDelete(device_type_id);
+        await DeviceTypeModel.findByIdAndDelete(device_type_id);
     }
 
     async getDeviceTypes() {
@@ -260,6 +267,8 @@ class DbAccessor {
     // user profiles
     async updateUserProfileById({ user_profile_id, first_name, last_name, phone_number, address, passport_serial }) {
         let now = new Date();
+        let obj = await UserProfileModel.findById(user_profile_id);
+        console.log(obj);
         await UserProfileModel.findByIdAndUpdate(user_profile_id, {
             first_name: first_name,
             last_name: last_name,
@@ -268,6 +277,63 @@ class DbAccessor {
             passport_serial: passport_serial,
             last_updated_at: now
         });
+    }
+
+    async getUser(user_id) {
+        return await UserModel.findById(user_id).populate('user_profile');
+    }
+
+    // orders
+    async addOrder({ service, client, additional_info }) {
+        let now = new Date();
+        let newOrder = new OrderModel({
+            service: service,
+            client: client,
+            additional_info: additional_info,
+            created_at: now
+        });
+        newOrder.save();
+    }
+
+    async addOrder({ service, client, additional_info }) {
+        let now = new Date();
+        let newOrder = new OrderModel({
+            service: service,
+            client: client,
+            additional_info: additional_info,
+            isCancelled: false,
+            isDone: false,
+            created_at: now
+        });
+        await newOrder.save();
+    }
+
+    async getOrderById(order_id) {
+        await OrderModel.findById(order_id);
+    }
+
+    async getOrders() {
+        await OrderModel.find({});
+    }
+
+    async getCompletedOrders() {
+        await OrderModel.find({ isCompleted: true });
+    }
+
+    async getCancelledOrders() {
+        await OrderModel.find({ isCancelled: true });
+    }
+
+    async cancelOrderById(order_id) {
+        let now = new Date();
+        OrderModel.findByIdAndUpdate(order_i, { isCancelled: true });
+        await newOrder.save();
+    }
+
+    async completeOrderById(order_id) {
+        let now = new Date();
+        OrderModel.findByIdAndUpdate(order_i, { isCompleted: true });
+        await newOrder.save();
     }
 }
 

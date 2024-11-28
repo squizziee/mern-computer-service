@@ -23,7 +23,8 @@ const UserSchema = new Schema({
         }
     },
     user_profile: {
-        type: UserProfileSchema,
+        type: Schema.Types.ObjectId,
+        ref: 'UserProfile',
         required: true
     },
     google_id: {

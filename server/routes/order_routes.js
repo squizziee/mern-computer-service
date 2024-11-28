@@ -1,15 +1,15 @@
 const DbAccessor = require("../services/data/DbAccessor");
 
 module.exports = function (app) {
-    app.get("/api/servicetype/:id", async (req, res) => {
+    app.get("/api/order/:id", async (req, res) => {
         try {
             const dbAccess = new DbAccessor();
             const id = req.params['id'];
-            const result = await dbAccess.getServiceTypeById(id);
+            const result = await dbAccess.getOrderById(id);
 
             if (!result) {
                 res.status(404);
-                res.send(`No service type with id ${id} found`)
+                res.send(`No order with id ${id} found`)
             }
             else {
                 res.status(200);
@@ -23,7 +23,7 @@ module.exports = function (app) {
 
     });
 
-    app.post("/api/servicetype", async (req, res, next) => {
+    app.post("/api/order", async (req, res, next) => {
         if (!req.user) {
             res.status(401);
             res.send("Not authenticated");
@@ -32,12 +32,13 @@ module.exports = function (app) {
         try {
             const dbAccess = new DbAccessor();
             const data = req.body;
-            await dbAccess.addServiceType({
-                name: data.name,
-                description: data.description,
+            await dbAccess.addOrder({
+                service: data.service,
+                client: data.client,
+                additional_info: data.additional_info
             })
             res.status(200);
-            res.send('Service type created');
+            res.send('Order created');
         } catch (err) {
             res.status(500);
             res.send('An error occured while processing request');
@@ -45,7 +46,7 @@ module.exports = function (app) {
         }
     });
 
-    app.put("/api/servicetype/:id", async (req, res, next) => {
+    app.post("/api/order/cancel", async (req, res, next) => {
         if (!req.user) {
             res.status(401);
             res.send("Not authenticated");
@@ -53,16 +54,10 @@ module.exports = function (app) {
         }
         try {
             const dbAccess = new DbAccessor();
-            const id = req.params['id']
             const data = req.body;
-
-            await dbAccess.updateServiceTypeById({
-                service_type_id: id,
-                name: data.name,
-                description: data.description,
-            })
+            await dbAccess.cancelOrderById(data.order_id);
             res.status(200);
-            res.send('Service type updated');
+            res.send('Order cancelled');
         } catch (err) {
             res.status(500);
             res.send('An error occured while processing request');
@@ -70,7 +65,7 @@ module.exports = function (app) {
         }
     });
 
-    app.delete("/api/servicetype/:id", async (req, res, next) => {
+    app.post("/api/order/complete", async (req, res, next) => {
         if (!req.user) {
             res.status(401);
             res.send("Not authenticated");
@@ -78,21 +73,21 @@ module.exports = function (app) {
         }
         try {
             const dbAccess = new DbAccessor();
-            const id = req.params['id'];
-            await dbAccess.deleteServiceTypeById(id);
+            const data = req.body;
+            await dbAccess.completeOrderById(data.order_id);
             res.status(200);
-            res.send({ message: `Service type with id of ${id} deleted successfully` });
+            res.send('Order completed');
         } catch (err) {
             res.status(500);
             res.send('An error occured while processing request');
-            console.log(err);;
+            console.log(err);
         }
     });
 
-    app.get("/api/servicetype", async (req, res) => {
+    app.get("/api/order", async (req, res) => {
         try {
             const dbAccess = new DbAccessor();
-            const result = await dbAccess.getServiceTypes();
+            const result = await dbAccess.getOrders();
             res.status(200);
             res.send(result);
         } catch (err) {
@@ -101,5 +96,32 @@ module.exports = function (app) {
             console.log(err);
         }
 
+    });
+
+    app.get("/api/order/cancelled", async (req, res) => {
+        try {
+            const dbAccess = new DbAccessor();
+            const result = await dbAccess.getCancelledOrders();
+            res.status(200);
+            res.send(result);
+        } catch (err) {
+            res.status(500);
+            res.send('An error occured while processing request');
+            console.log(err);
+        }
+
+    });
+
+    app.get("/api/order/completed", async (req, res) => {
+        try {
+            const dbAccess = new DbAccessor();
+            const result = await dbAccess.getCompletedOrders();
+            res.status(200);
+            res.send(result);
+        } catch (err) {
+            res.status(500);
+            res.send('An error occured while processing request');
+            console.log(err);
+        }
     });
 }

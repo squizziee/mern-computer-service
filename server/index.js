@@ -59,6 +59,7 @@ passport.use(
             const tmp_email = profile.emails[0].value;
             const tmp_id = profile.id;
             const tmp_username = profile.displayName;
+            let now = new Date();
             try {
                 let user = await UserModel.findOne({ google_id: profile.id });
                 if (!user) {
@@ -69,7 +70,8 @@ passport.use(
                         address: 'None',
                         phone_number: '+375330000000',
                         passport_serial: "None",
-                        created_at: new Date()
+                        created_at: now,
+                        last_updated_at: now
                     });
                     await profile.validate();
                     await profile.save();
@@ -110,6 +112,7 @@ app.use(passport.session());
 const auth = new Authenticator(app);
 
 require('./routes/service_type_routes')(app);
+require('./routes/device_type_routes')(app);
 
 app.post('/register', auth.registerDefault);
 
@@ -139,9 +142,10 @@ app.post('/login', passport.authenticate('local', {
     res.send("Success");
 });
 
-app.get('/login/status', (req, res) => {
+app.get('/login/status', async (req, res) => {
     if (req.isAuthenticated()) {
-        res.json({ authenticated: true, user: req.user });
+        let db = new DbAccessor();
+        res.json({ authenticated: true, user: await db.getUser(req.user._id) });
     } else {
         res.json({ authenticated: false });
     }
@@ -178,27 +182,26 @@ app.get("/api", (req, res) => {
     res.json({ message: "Hello from server!", user: req.user });
 });
 
-app.post("/api/init_database", async (req, res, next) => {
-    if (!req.user) {
-        res.status(401);
-        res.send("Not authenticated");
-        return;
-    }
-    try {
-        let tmp = new BaseDbInit();
-        //await tmp.initializeServiceTypes();
-        //await tmp.initializeDeviceTypes();
-        await tmp.initializeServices();
-        res.status(200);
-    } catch (err) {
-        res.status(500);
-        res.send('An error occured while processing request');
-        console.log(err);
-        return;
-    } finally {
-        res.redirect("/api")
-    }
-});
+// app.post("/api/init_database", async (req, res, next) => {
+//     if (!req.user) {
+//         res.status(401);
+//         res.send("Not authenticated");
+//         return;
+//     }
+//     try {
+//         let tmp = new BaseDbInit();
+//         //await tmp.initializeServiceTypes();
+//         //await tmp.initializeDeviceTypes();
+//         await tmp.initializeServices();
+//         res.status(200);
+//         res.send("Success");
+//     } catch (err) {
+//         res.status(500);
+//         res.send('An error occured while processing request');
+//         console.log(err);
+//         return;
+//     }
+// });
 
 // Service CRUD
 app.get("/api/service/:id", async (req, res) => {
@@ -232,6 +235,7 @@ app.post("/api/service", async (req, res, next) => {
     try {
         const dbAccess = new DbAccessor();
         const data = req.body;
+        console.log(data)
         await dbAccess.addService({
             service_type_id: data.service_type_id,
             name: data.name,
@@ -240,12 +244,11 @@ app.post("/api/service", async (req, res, next) => {
             device_types: data.device_types,
         })
         res.status(200);
+        res.send("Success");
     } catch (err) {
         res.status(500);
         res.send('An error occured while processing request');
         console.log(err);
-    } finally {
-        res.redirect("/api")
     }
 });
 
@@ -272,12 +275,11 @@ app.put("/api/service/:id", async (req, res, next) => {
             device_types: data.device_types,
         })
         res.status(200);
+        res.send("Success");
     } catch (err) {
         res.status(500);
         res.send('An error occured while processing request');
         console.log(err);
-    } finally {
-        res.redirect("/api")
     }
 });
 
@@ -322,18 +324,35 @@ app.get("/api/service", async (req, res) => {
 
 });
 
-app.get("/api/devicetype", async (req, res) => {
+app.put("/api/profile/:id", async (req, res, next) => {
+    if (!req.user && req.user._id !== req.params['id']) {
+        res.status(401);
+        res.send("Not authenticated");
+        return;
+    }
     try {
         const dbAccess = new DbAccessor();
-        const result = await dbAccess.getDeviceTypes();
+        const id = req.params['id']
+        const data = req.body;
+
+        await dbAccess.updateUserProfileById({
+            user_profile_id: id,
+            first_name: data.first_name,
+            last_name: data.last_name,
+            phone_number: data.phone_number,
+            address: data.address,
+            passport_serial: data.passport_serial,
+        });
+
+
+
         res.status(200);
-        res.send(result);
+        res.send("Success");
     } catch (err) {
         res.status(500);
         res.send('An error occured while processing request');
         console.log(err);
     }
-
 });
 
 app.listen(PORT, () => {

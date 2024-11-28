@@ -6,7 +6,7 @@ import qs from 'qs'
 import Select from 'react-select'
 import { Link } from "react-router-dom";
 
-export default function Catalog() {
+export default function CatalogClone() {
     const [services, setServices] = useState([]);
     const [searchResults, setSearchResults] = useState([]);
     const [authenticated, setAuthenticated] = useState({});
@@ -105,27 +105,6 @@ function ServiceBlock({ service, onDelete, onEdit, authenticated }) {
                     <div>{service.service_type.name}</div>
                     <div>${service.base_price}</div>
                 </div>
-                {
-                    authenticated ?
-                        <div>
-                            <div className='service-block-time'>
-                                <div>
-                                    Created (your timezone): {(new Date(service.created_at)).toLocaleString()}
-                                    <br></br>
-                                    Created (UTC): {(new Date(service.created_at)).toUTCString()}
-                                </div>
-                            </div>
-                            <div className='service-block-time'>
-                                <div>
-                                    Updated(your timezone): {(new Date(service.last_updated_at)).toLocaleString()}
-                                    <br></br>
-                                    Updated (UTC): {(new Date(service.last_updated_at)).toUTCString()}
-                                </div>
-                            </div>
-                        </div>
-                        :
-                        <div></div>
-                }
                 <div className='service-block-description'>
                     {
                         service.description.length > 80 ?

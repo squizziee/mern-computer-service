@@ -24,22 +24,39 @@ export default function Navigation() {
                 <Link to="/catalog">Catalog</Link>
                 <Link to="/login">Login</Link>
                 <Link to="/register">Register</Link>
+                <Link to="/servicetypes">Types</Link>
+                <Link to="/devicetypes">Devices</Link>
             </div>
-            <div className='auth-info'>
-                {
-                    authenticated.authenticated ?
-                        <div>
-                            <Link to="/profile">
-                                {authenticated.user.user_profile.first_name} {authenticated.user.user_profile.last_name}
-                            </Link>
-                            <span>
-                                {authenticated.user.email}
-                            </span>
-                        </div>
-                        :
-                        <div></div>
-                }
+            <div style={{ display: "flex" }}>
+                <div className='misc-info'>
+                    <div>
+                        <span>
+                            {(new Date()).toLocaleDateString()}
+                        </span>
+                        <span>
+                            {Intl.DateTimeFormat().resolvedOptions().timeZone}
+                        </span>
+                    </div>
+
+
+                </div>
+                <div className='auth-info'>
+                    {
+                        authenticated.authenticated ?
+                            <div>
+                                <Link to="/profile">
+                                    {authenticated.user.user_profile.first_name} {authenticated.user.user_profile.last_name}
+                                </Link>
+                                <span>
+                                    {authenticated.user.email}
+                                </span>
+                            </div>
+                            :
+                            <div></div>
+                    }
+                </div>
             </div>
+
         </div>
     );
 }

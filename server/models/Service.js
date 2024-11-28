@@ -5,7 +5,8 @@ const Schema = mongoose.Schema;
 
 const ServiceSchema = new Schema({
     service_type: {
-        type: ServiceTypeSchema,
+        type: Schema.Types.ObjectId,
+        ref: 'ServiceType',
         required: true,
     },
     name: {
@@ -31,7 +32,8 @@ const ServiceSchema = new Schema({
         }
     },
     device_types: {
-        type: [DeviceTypeSchema],
+        type: [Schema.Types.ObjectId],
+        ref: 'DeviceType',
         required: true
     },
     created_at: {
