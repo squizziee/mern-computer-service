@@ -113,6 +113,7 @@ const auth = new Authenticator(app);
 
 require('./routes/service_type_routes')(app);
 require('./routes/device_type_routes')(app);
+require('./routes/order_routes')(app);
 
 app.post('/register', auth.registerDefault);
 
@@ -306,6 +307,7 @@ app.get("/api/service", async (req, res) => {
     try {
         const dbAccess = new DbAccessor();
         const data = req.query;
+        console.log(data);
         const result = await dbAccess.getServices({
             service_type_id_list: data.service_type_list,
             min_price: data.min_price,

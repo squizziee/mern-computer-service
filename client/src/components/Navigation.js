@@ -23,9 +23,15 @@ export default function Navigation() {
                 <Link to="/">Home</Link>
                 <Link to="/catalog">Catalog</Link>
                 <Link to="/login">Login</Link>
-                <Link to="/register">Register</Link>
+                {
+                    authenticated.authenticated ?
+                        <div></div>
+                        :
+                        <Link to="/register">Register</Link>
+                }
                 <Link to="/servicetypes">Types</Link>
                 <Link to="/devicetypes">Devices</Link>
+                <Link to="/orders">Orders</Link>
             </div>
             <div style={{ display: "flex" }}>
                 <div className='misc-info'>

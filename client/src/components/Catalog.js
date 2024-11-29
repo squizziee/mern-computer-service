@@ -66,7 +66,7 @@ export default function Catalog() {
                     {
                         services.map((service, index) => (
                             <div key={index}>
-                                <ServiceBlock authenticated={authenticated.authenticated} service={service} onDelete={fetchServices} onEdit={(e) => { aboba(service); setState(Date.now()) }} />
+                                <ServiceBlock user={authenticated.user} authenticated={authenticated.authenticated} service={service} onDelete={fetchServices} onEdit={(e) => { aboba(service); setState(Date.now()) }} />
                             </div>
 
                         ))
@@ -78,7 +78,7 @@ export default function Catalog() {
     );
 }
 
-function ServiceBlock({ service, onDelete, onEdit, authenticated }) {
+function ServiceBlock({ user, service, onDelete, onEdit, authenticated }) {
     function deleteService(id) {
         axios({
             method: 'DELETE',
@@ -95,6 +95,28 @@ function ServiceBlock({ service, onDelete, onEdit, authenticated }) {
 
     function onInfo(e) {
         window.location.href = `/catalog/${service._id}`;
+    }
+
+    function orderService() {
+        if (!window.confirm('Are you sure you want to purchase the service?')) {
+            return;
+        }
+        let info = window.prompt("Any additional info you want us to know")
+        axios({
+            method: 'POST',
+            url: `/api/order/`,
+            data: qs.stringify({
+                service: service,
+                client: user,
+                additional_info: info
+            }),
+        })
+            .then((data) => {
+                console.log(data);
+            })
+            .catch((err) => {
+                alert("Error occured: " + err);
+            })
     }
 
     return (
@@ -150,6 +172,7 @@ function ServiceBlock({ service, onDelete, onEdit, authenticated }) {
                             <button style={{ backgroundColor: 'red' }} onClick={(e) => { deleteService(service._id) }}>Delete</button>
                             <button onClick={onEdit}>Edit</button>
                             <button onClick={onInfo}>View</button>
+                            <button onClick={orderService}>Purchase</button>
                         </div>
                         :
                         <div className='service-block-buttons'>

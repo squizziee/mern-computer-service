@@ -46,7 +46,7 @@ module.exports = function (app) {
         }
     });
 
-    app.post("/api/order/cancel", async (req, res, next) => {
+    app.put("/api/order/cancel/:id", async (req, res, next) => {
         if (!req.user) {
             res.status(401);
             res.send("Not authenticated");
@@ -54,8 +54,8 @@ module.exports = function (app) {
         }
         try {
             const dbAccess = new DbAccessor();
-            const data = req.body;
-            await dbAccess.cancelOrderById(data.order_id);
+            const id = req.params['id'];
+            await dbAccess.cancelOrderById(id);
             res.status(200);
             res.send('Order cancelled');
         } catch (err) {
@@ -65,7 +65,7 @@ module.exports = function (app) {
         }
     });
 
-    app.post("/api/order/complete", async (req, res, next) => {
+    app.put("/api/order/complete/:id", async (req, res, next) => {
         if (!req.user) {
             res.status(401);
             res.send("Not authenticated");
@@ -73,8 +73,8 @@ module.exports = function (app) {
         }
         try {
             const dbAccess = new DbAccessor();
-            const data = req.body;
-            await dbAccess.completeOrderById(data.order_id);
+            const id = req.params['id'];
+            await dbAccess.completeOrderById(id);
             res.status(200);
             res.send('Order completed');
         } catch (err) {

@@ -154,7 +154,19 @@ class EditForm extends React.Component {
         let phoneNumberColor = this.state.phoneNumberValid ? "#f7f7f7" : "pink";
         return (
             <div className='profile-edit-block'>
-                <div className='profile-edit-block-title'>Edit</div>
+                <div className='profile-edit-block-title'>Profile</div>
+                <div className='profile-edit-block-dates'>
+                    <span>
+                        <strong>Created (your timezone):</strong> {(new Date(this.props.profile.created_at)).toLocaleString()},
+                        <strong> UTC:</strong> {(new Date(this.props.profile.created_at)).toUTCString()}
+                    </span>
+                    <br></br>
+                    <span>
+                        <strong>Last updated (your timezone):</strong> {(new Date(this.props.profile.last_updated_at)).toLocaleString()},
+                        <strong> UTC:</strong> {(new Date(this.props.profile.last_updated_at)).toUTCString()}
+                    </span>
+
+                </div>
                 <form onSubmit={this.handleSubmit}>
                     <p>
                         <label>First name</label><br />

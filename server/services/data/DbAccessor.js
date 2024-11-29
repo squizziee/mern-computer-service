@@ -68,6 +68,11 @@ class DbAccessor {
         let queried = false;
         let dir;
 
+        if (device_types && device_types.constructor !== Array) {
+            device_types = [device_types];
+            console.log(device_types);
+        }
+
         if (sort_by) {
             if (sort_by[0] == '-') {
                 dir = '-'
@@ -79,7 +84,7 @@ class DbAccessor {
         }
 
         if (service_type_id_list && service_type_id_list.length > 0) {
-            result = ServiceModel.where('service_type._id').in(service_type_id_list);
+            result = ServiceModel.where('service_type').in(service_type_id_list);
             queried = true;
         }
         if (min_price) {
@@ -102,13 +107,13 @@ class DbAccessor {
         }
         if (device_types) {
             if (queried) {
-                result = result.where('device_types._id').in(device_types);
+                result = result.where('device_types').in(device_types);
                 // result = result.find({
                 //     device_types: { $in: device_types }
                 // });
             }
             else {
-                result = ServiceModel.where('device_types._id').in(device_types);
+                result = ServiceModel.where('device_types').in(device_types);
                 // result = ServiceModel.find({
                 //     device_types: { $in: device_types }
                 // });
@@ -160,7 +165,7 @@ class DbAccessor {
         }
         else {
             if (!queried) {
-                result = ServiceModel.find({});
+                result = ServiceModel.find({}).populate('service_type').populate('device_types');
             }
             result = result.populate('service_type').populate('device_types');
             return this.#sort_result(await result.exec(), sort_by, dir);
@@ -302,38 +307,116 @@ class DbAccessor {
             client: client,
             additional_info: additional_info,
             isCancelled: false,
-            isDone: false,
+            isCompleted: false,
             created_at: now
         });
         await newOrder.save();
     }
 
     async getOrderById(order_id) {
-        await OrderModel.findById(order_id);
+        await OrderModel.findById(order_id)
+            .populate('client')
+            .populate({
+                path: 'client',
+                populate: {
+                    path: 'user_profile',
+                }
+            })
+            .populate('service')
+            .populate({
+                path: 'service',
+                populate: {
+                    path: 'service_type',
+                }
+            })
+            .populate({
+                path: 'service',
+                populate: {
+                    path: 'device_types',
+                }
+            });
     }
 
     async getOrders() {
-        await OrderModel.find({});
+        return await OrderModel.find({})
+            .populate('client')
+            .populate({
+                path: 'client',
+                populate: {
+                    path: 'user_profile',
+                }
+            })
+            .populate('service')
+            .populate({
+                path: 'service',
+                populate: {
+                    path: 'service_type',
+                }
+            })
+            .populate({
+                path: 'service',
+                populate: {
+                    path: 'device_types',
+                }
+            });
     }
 
     async getCompletedOrders() {
-        await OrderModel.find({ isCompleted: true });
+        await OrderModel.find({ isCompleted: true })
+            .populate('client')
+            .populate({
+                path: 'client',
+                populate: {
+                    path: 'user_profile',
+                }
+            })
+            .populate('service')
+            .populate({
+                path: 'service',
+                populate: {
+                    path: 'service_type',
+                }
+            })
+            .populate({
+                path: 'service',
+                populate: {
+                    path: 'device_types',
+                }
+            });
     }
 
     async getCancelledOrders() {
-        await OrderModel.find({ isCancelled: true });
+        await OrderModel.find({ isCancelled: true }).populate('client')
+            .populate('client')
+            .populate({
+                path: 'client',
+                populate: {
+                    path: 'user_profile',
+                }
+            })
+            .populate('service')
+            .populate({
+                path: 'service',
+                populate: {
+                    path: 'service_type',
+                }
+            })
+            .populate({
+                path: 'service',
+                populate: {
+                    path: 'device_types',
+                }
+            });
     }
 
     async cancelOrderById(order_id) {
         let now = new Date();
-        OrderModel.findByIdAndUpdate(order_i, { isCancelled: true });
-        await newOrder.save();
+        await OrderModel.findByIdAndUpdate(order_id, { isCancelled: true });
     }
 
     async completeOrderById(order_id) {
         let now = new Date();
-        OrderModel.findByIdAndUpdate(order_i, { isCompleted: true });
-        await newOrder.save();
+        await OrderModel.findByIdAndUpdate(order_id, { isCompleted: true });
     }
 }
 

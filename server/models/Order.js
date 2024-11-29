@@ -5,11 +5,13 @@ const Schema = mongoose.Schema;
 
 const OrderSchema = new Schema({
     service: {
-        type: ServiceSchema,
+        type: Schema.Types.ObjectId,
+        ref: 'Service',
         required: true,
     },
     client: {
-        type: UserSchema,
+        type: Schema.Types.ObjectId,
+        ref: 'User',
         required: true,
     },
     additional_info: {
@@ -20,7 +22,7 @@ const OrderSchema = new Schema({
         type: Boolean,
         required: true,
     },
-    isCompeleted: {
+    isCompleted: {
         type: Boolean,
         required: true,
     },
