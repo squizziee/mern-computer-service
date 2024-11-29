@@ -180,6 +180,7 @@ class CreateForm extends React.Component {
 
     onDescriptionChange(e) {
         var val = e.target.value;
+
         var valid = this.validateDescription(val);
         this.setState({ description: val, descriptionValid: valid });
     }
@@ -211,6 +212,8 @@ class CreateForm extends React.Component {
     render() {
         let nameColor = this.state.nameValid === true ? "transparent" : "pink";
         let descriptionColor = this.state.descriptionValid === true ? "transparent" : "pink";
+        console.log(descriptionColor);
+
         return (
             <div className='general-block'>
                 <div className='general-block-title'>Create new</div>

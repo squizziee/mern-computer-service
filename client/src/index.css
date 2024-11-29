@@ -40,7 +40,8 @@ body {
 
 .general-block input,
 .general-block textarea {
-  border: none;
+  border-width: 2px;
+  border-style: solid;
   outline: none;
   padding: 10px;
   background-color: #f7f7f7;
@@ -77,6 +78,8 @@ body {
 .service-block-container {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  /* grid-template-columns: repeat(auto-fill, var(--card_width)); */
+  grid-template-rows: masonry;
   padding: 20px;
   grid-gap: 20px;
 }
@@ -158,7 +161,6 @@ body {
 
 .auth-info {
   color: #fcfcfc;
-  margin-left: 20px;
 }
 
 .auth-info a {
@@ -175,6 +177,7 @@ body {
 
 .misc-info {
   color: #fcfcfc;
+  margin-right: 20px;
 }
 
 .misc-info span:nth-child(1) {
@@ -286,15 +289,22 @@ body {
   color: #ffc400;
 }
 
+.service-info-container {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 100px;
+  padding-bottom: 100px;
+}
+
 .service-info-block {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
   width: 800px;
   background-color: #ffffff;
   box-shadow: 0 0 20px rgba(0, 0, 0, .075);
   border-radius: 16px;
+  position: relative;
 }
 
 .service-info-block .name {
@@ -393,7 +403,8 @@ time .buttons button {
 }
 
 .profile-edit-block input {
-  border: none;
+  border-width: 2px;
+  border-style: solid;
   outline: none;
   padding: 10px;
   background-color: #f7f7f7;
@@ -417,7 +428,8 @@ time .buttons button {
 }
 
 .register-block input {
-  border: none;
+  border-width: 2px;
+  border-style: solid;
   outline: none;
   padding: 10px;
   background-color: #f7f7f7;
@@ -607,4 +619,9 @@ time .buttons button {
   text-transform: uppercase;
   font-weight: 700;
   opacity: .6;
+}
+
+textarea {
+  border-width: 2px !important;
+  border-style: solid !important;
 }

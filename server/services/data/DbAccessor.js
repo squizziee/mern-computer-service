@@ -361,8 +361,32 @@ class DbAccessor {
             });
     }
 
+    async getPendingOrders() {
+        return await OrderModel.find({ isCompleted: false, isCancelled: false })
+            .populate('client')
+            .populate({
+                path: 'client',
+                populate: {
+                    path: 'user_profile',
+                }
+            })
+            .populate('service')
+            .populate({
+                path: 'service',
+                populate: {
+                    path: 'service_type',
+                }
+            })
+            .populate({
+                path: 'service',
+                populate: {
+                    path: 'device_types',
+                }
+            });
+    }
+
     async getCompletedOrders() {
-        await OrderModel.find({ isCompleted: true })
+        return await OrderModel.find({ isCompleted: true })
             .populate('client')
             .populate({
                 path: 'client',
@@ -386,7 +410,7 @@ class DbAccessor {
     }
 
     async getCancelledOrders() {
-        await OrderModel.find({ isCancelled: true }).populate('client')
+        return await OrderModel.find({ isCancelled: true }).populate('client')
             .populate('client')
             .populate({
                 path: 'client',

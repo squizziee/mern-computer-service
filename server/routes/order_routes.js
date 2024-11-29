@@ -98,7 +98,21 @@ module.exports = function (app) {
 
     });
 
-    app.get("/api/order/cancelled", async (req, res) => {
+    app.get("/api/orderpending", async (req, res) => {
+        try {
+            const dbAccess = new DbAccessor();
+            const result = await dbAccess.getPendingOrders();
+            res.status(200);
+            res.send(result);
+        } catch (err) {
+            res.status(500);
+            res.send('An error occured while processing request');
+            console.log(err);
+        }
+
+    });
+
+    app.get("/api/ordercancelled", async (req, res) => {
         try {
             const dbAccess = new DbAccessor();
             const result = await dbAccess.getCancelledOrders();
@@ -112,7 +126,7 @@ module.exports = function (app) {
 
     });
 
-    app.get("/api/order/completed", async (req, res) => {
+    app.get("/api/ordercompleted", async (req, res) => {
         try {
             const dbAccess = new DbAccessor();
             const result = await dbAccess.getCompletedOrders();

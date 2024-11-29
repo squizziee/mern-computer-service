@@ -11,6 +11,35 @@ export default function Orders() {
     const [state, setState] = useState(Date.now());
     const [authenticated, setAuthenticated] = useState({});
 
+    const filterOptions = [
+        { value: '', label: 'All' },
+        { value: 'pending', label: 'Pending' },
+        { value: 'cancelled', label: 'Cancelled' },
+        { value: 'completed', label: 'Completed' },
+    ]
+
+    function fetchOrdersWithFilter(filter) {
+        fetch(`/api/order${filter.value}`)
+            .then((response) => response.json())
+            .then((data) => {
+                console.log(data);
+                setOrders(data);
+            })
+            .catch((err) => {
+                console.log(err.message);
+            });
+
+    }
+    // fetch('/api/order')
+    //     .then((response) => response.json())
+    //     .then((data) => {
+    //         console.log(data);
+    //         setOrders(data);
+    //     })
+    //     .catch((err) => {
+    //         console.log(err.message);
+    //     });
+
     function fetchOrders() {
         fetch('/api/order')
             .then((response) => response.json())
@@ -39,6 +68,10 @@ export default function Orders() {
     return (
         <>
             <Layout>
+                <div style={{ margin: '20px 20px 0 20px' }}>
+                    <Select defaultValue={filterOptions[0]} placeholder='Filter' options={filterOptions} onChange={fetchOrdersWithFilter} />
+                </div>
+
                 <div className='order-block-container'>
                     {
                         orders.map((order, index) => (
@@ -88,50 +121,68 @@ const OrderBlock = ({ order, onUpdate }) => {
         <>
             <div className='order-block'>
                 {
-                    order.isCompleted ?
-                        <div className='order-completed'>
-                            <span>Completed</span>
+                    order.service ?
+                        <div>
+                            {
+                                order.isCompleted ?
+                                    <div className='order-completed'>
+                                        <span>Completed</span>
+                                    </div>
+                                    :
+                                    <div></div>
+                            }
+                            {
+                                order.isCancelled ?
+                                    <div className='order-cancelled'>
+                                        <span>Cancelled</span>
+                                    </div>
+                                    :
+                                    <div></div>
+                            }
                         </div>
                         :
-                        <div></div>
-                }
-                {
-                    order.isCancelled ?
                         <div className='order-cancelled'>
-                            <span>Cancelled</span>
+                            <span>Deleted</span>
                         </div>
-                        :
-                        <div></div>
                 }
-                <div className='order-general'>
-                    <div className='order-id'>
-                        #{order._id.substring(5)}
-                    </div>
-                    <div>
-                        <strong>{order.client.user_profile.first_name} {order.client.user_profile.last_name} </strong>({order.client.email})
-                    </div>
-                </div>
-                <div className='order-service'>
-                    <strong>[{order.service.service_type.name}]</strong>
-                    <em> {order.service.name}</em>
-                    <br></br>
-                    {
-                        order.service.device_types.map((deviceType, index) => (
-                            <div className='device-type' key={index}>
-                                {deviceType.name}
+
+                {
+                    !order.service ?
+                        <div></div>
+                        :
+                        <div>
+                            <div className='order-general'>
+                                <div className='order-id'>
+                                    #{order._id.substring(5)}
+                                </div>
+                                <div>
+                                    <strong>{order.client.user_profile.first_name} {order.client.user_profile.last_name} </strong>({order.client.email})
+                                </div>
                             </div>
-                        ))
-                    }
-                </div>
-                <div className='order-total'>
-                    <div className='buttons'>
-                        <button onClick={cancelOrder}>Cancel</button>
-                        <button onClick={completeOrder} style={{ backgroundColor: "#ffc400", color: "#000000" }}>Complete</button>
-                    </div>
-                    <div className='order-price'>
-                        ${order.service.base_price}
-                    </div>
-                </div>
+                            <div className='order-service'>
+                                <strong>[{order.service.service_type.name}]</strong>
+                                <em> {order.service.name} - {order.additional_info ? order.additional_info : 'no additional info'}</em>
+                                <br></br>
+                                {
+                                    order.service.device_types.map((deviceType, index) => (
+                                        <div className='device-type' key={index}>
+                                            {deviceType.name}
+                                        </div>
+                                    ))
+                                }
+                            </div>
+                            <div className='order-total'>
+                                <div className='buttons'>
+                                    <button onClick={cancelOrder}>Cancel</button>
+                                    <button onClick={completeOrder} style={{ backgroundColor: "#ffc400", color: "#000000" }}>Complete</button>
+                                </div>
+                                <div className='order-price'>
+                                    ${order.service.base_price}
+                                </div>
+                            </div>
+                        </div>
+                }
+
             </div>
         </>
     );

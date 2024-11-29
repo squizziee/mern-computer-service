@@ -147,11 +147,11 @@ class EditForm extends React.Component {
     }
 
     render() {
-        let firstNameColor = this.state.firstNameValid ? "#f7f7f7" : "pink";
-        let lastNameColor = this.state.lastNameValid ? "#f7f7f7" : "pink";
-        let passportSerialColor = this.state.passportSerialValid ? "#f7f7f7" : "pink";
-        let addressColor = this.state.addressValid ? "#f7f7f7" : "pink";
-        let phoneNumberColor = this.state.phoneNumberValid ? "#f7f7f7" : "pink";
+        let firstNameColor = this.state.firstNameValid ? "transparent" : "pink";
+        let lastNameColor = this.state.lastNameValid ? "transparent" : "pink";
+        let passportSerialColor = this.state.passportSerialValid ? "transparent" : "pink";
+        let addressColor = this.state.addressValid ? "transparent" : "pink";
+        let phoneNumberColor = this.state.phoneNumberValid ? "transparent" : "pink";
         return (
             <div className='profile-edit-block'>
                 <div className='profile-edit-block-title'>Profile</div>
@@ -171,27 +171,27 @@ class EditForm extends React.Component {
                     <p>
                         <label>First name</label><br />
                         <input type="text" value={this.state.firstName}
-                            onChange={this.onFirstNameChange} style={{ backgroundColor: firstNameColor }} />
+                            onChange={this.onFirstNameChange} style={{ borderColor: firstNameColor }} />
                     </p>
                     <p>
                         <label>Last name</label><br />
                         <input type="text" value={this.state.lastName}
-                            onChange={this.onLastNameChange} style={{ backgroundColor: lastNameColor }} />
+                            onChange={this.onLastNameChange} style={{ borderColor: lastNameColor }} />
                     </p>
                     <p>
                         <label>Passport serial number</label><br />
                         <input type="text" value={this.state.passportSerial}
-                            onChange={this.onPassportSerialChange} style={{ backgroundColor: passportSerialColor }} />
+                            onChange={this.onPassportSerialChange} style={{ borderColor: passportSerialColor }} />
                     </p>
                     <p>
                         <label>Address</label><br />
                         <input type="text" value={this.state.address}
-                            onChange={this.onAddressChange} style={{ backgroundColor: addressColor }} />
+                            onChange={this.onAddressChange} style={{ borderColor: addressColor }} />
                     </p>
                     <p>
                         <label>Phone number</label><br />
                         <input type="text" value={this.state.phoneNumber}
-                            onChange={this.onPhoneNumberChange} style={{ backgroundColor: phoneNumberColor }} />
+                            onChange={this.onPhoneNumberChange} style={{ borderColor: phoneNumberColor }} />
                     </p>
 
                     <button>Apply</button>

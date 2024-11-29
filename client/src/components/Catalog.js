@@ -452,6 +452,8 @@ class CreateForm extends React.Component {
         let nameColor = this.state.nameValid === true ? "transparent" : "pink";
         let descriptionColor = this.state.descriptionValid === true ? "transparent" : "pink";
         let basePriceColor = this.state.basePriceValid === true ? "transparent" : "pink";
+        let typeColor = this.state.basePriceValid === true ? "transparent" : "pink";
+        let deviceColor = this.state.basePriceValid === true ? "transparent" : "pink";
         return (
             <div className='general-block'>
                 <div className='general-block-title'>Create new</div>
@@ -459,22 +461,22 @@ class CreateForm extends React.Component {
                     <p>
                         <label>Name</label><br />
                         <input type="text" value={this.state.name}
-                            onChange={this.onNameChange} style={{ backgroundColor: nameColor }} />
+                            onChange={this.onNameChange} style={{ borderColor: nameColor }} />
                     </p>
                     <p>
                         <label>Description</label><br />
                         <textarea value={this.state.description}
-                            onChange={this.onDescriptionChange} style={{ backgroundColor: descriptionColor, resize: 'none' }} />
+                            onChange={this.onDescriptionChange} style={{ borderColor: descriptionColor, resize: 'none' }} />
                     </p>
                     <p>
                         <label>Base price</label><br />
                         <input type="number" value={this.state.basePrice}
-                            onChange={this.onBasePriceChange} style={{ backgroundColor: basePriceColor }} />
+                            onChange={this.onBasePriceChange} style={{ borderColor: basePriceColor }} />
                     </p>
                     {
                         this.state.serviceTypes && this.state.deviceTypes ?
                             <div>
-                                <Select options={this.state.serviceTypes} onChange={this.onServiceTypeChange} />
+                                <Select options={this.state.serviceTypes} onChange={this.onServiceTypeChange} styles={{ borderColor: typeColor }} />
                                 <Select options={this.state.deviceTypes} closeMenuOnSelect={false} isMulti onChange={this.onDeviceTypesChange} />
                             </div>
                             :
@@ -666,9 +668,9 @@ class EditForm extends React.Component {
     }
 
     render() {
-        let nameColor = this.state.nameValid === true ? "#f7f7f7" : "pink";
-        let descriptionColor = this.state.descriptionValid === true ? "#f7f7f7" : "pink";
-        let basePriceColor = this.state.basePriceValid === true ? "#f7f7f7" : "pink";
+        let nameColor = this.state.nameValid === true ? "transparent" : "pink";
+        let descriptionColor = this.state.descriptionValid === true ? "transparent" : "pink";
+        let basePriceColor = this.state.basePriceValid === true ? "transparent" : "pink";
         return (
             <div className='general-block'>
                 <div className='general-block-title'>Edit</div>
@@ -676,17 +678,17 @@ class EditForm extends React.Component {
                     <p>
                         <label>Name</label><br />
                         <input type="text" value={this.state.name}
-                            onChange={this.onNameChange} style={{ backgroundColor: nameColor }} />
+                            onChange={this.onNameChange} style={{ borderColor: nameColor }} />
                     </p>
                     <p>
                         <label>Description</label><br />
                         <textarea value={this.state.description}
-                            onChange={this.onDescriptionChange} style={{ backgroundColor: descriptionColor, resize: 'none' }} />
+                            onChange={this.onDescriptionChange} style={{ borderColor: descriptionColor, resize: 'none' }} />
                     </p>
                     <p>
                         <label>Base price</label><br />
                         <input type="number" value={this.state.basePrice}
-                            onChange={this.onBasePriceChange} style={{ backgroundColor: basePriceColor }} />
+                            onChange={this.onBasePriceChange} style={{ borderColor: basePriceColor }} />
                     </p>
                     {
                         this.state.serviceTypes && this.state.deviceTypes ?
