@@ -444,4 +444,4 @@ class DbAccessor {
     }
 }
 
-module.exports = DbAccessor;
+export default DbAccessor;

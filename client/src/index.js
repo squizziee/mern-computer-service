@@ -7,12 +7,12 @@ import Layout from './components/Layout';
 import Home from './components/Home';
 import Profile from './components/Profile';
 import Catalog from './components/Catalog';
-import Login from './components/Login';
 import Register from './components/Register';
 import ServiceInfo from './components/Service';
 import ServiceTypes from './components/ServiceTypes';
 import DeviceTypes from './components/DeviceTypes';
 import Orders from './components/Orders';
+import Login from './components/Login';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

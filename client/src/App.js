@@ -1,7 +1,23 @@
 import logo from './logo.svg';
 import './App.css';
+import { auth } from './firebase';
 
 function App() {
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setCurrentUser(user);
+      } else {
+        setCurrentUser(null);
+      }
+    });
+
+    // Cleanup the listener on component unmount
+    return () => unsubscribe();
+  }, [auth]);
+
   return (
     <div className="App">
       <header className="App-header">

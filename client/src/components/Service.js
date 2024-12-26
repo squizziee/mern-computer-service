@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom"
 import axios from "axios"
 import Layout from "./Layout";
+import qs from 'qs';
 
 export default function ServiceInfo() {
     const { id } = useParams()
@@ -43,6 +44,28 @@ export default function ServiceInfo() {
             })
     }, [])
 
+    function orderService() {
+        if (!window.confirm('Are you sure you want to purchase the service?')) {
+            return;
+        }
+        let info = window.prompt("Any additional info you want us to know")
+        axios({
+            method: 'POST',
+            url: `/api/order/`,
+            data: qs.stringify({
+                service: service,
+                client: authenticated.user,
+                additional_info: info
+            }),
+        })
+            .then((data) => {
+                console.log(data);
+            })
+            .catch((err) => {
+                alert("Error occured: " + err);
+            })
+    }
+
     return (
         <>
             <Layout>
@@ -67,7 +90,11 @@ export default function ServiceInfo() {
                                     <div>
                                         {
                                             authenticated.authenticated ?
-                                                <button style={{ backgroundColor: 'red' }} onClick={(e) => { deleteService(service._id) }}>Delete</button>
+                                                <div style={{ display: 'inline-block' }}>
+                                                    <button style={{ backgroundColor: 'red' }} onClick={(e) => { deleteService(service._id) }}>Delete</button>
+                                                    <button onClick={orderService}>Purchase</button>
+                                                </div>
+
                                                 :
                                                 <div></div>
                                         }

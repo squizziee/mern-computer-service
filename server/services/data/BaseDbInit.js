@@ -64,4 +64,4 @@ class BaseDbInit {
     }
 }
 
-module.exports = BaseDbInit;
+export default BaseDbInit;

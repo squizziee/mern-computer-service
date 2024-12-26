@@ -373,11 +373,15 @@ time .buttons button {
   font-size: 30px;
 }
 
+.profile-edit-block-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 100px;
+  margin-bottom: 100px;
+}
+
 .profile-edit-block {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
   width: 800px;
   background-color: #ffffff;
   box-shadow: 0 0 20px rgba(0, 0, 0, .075);

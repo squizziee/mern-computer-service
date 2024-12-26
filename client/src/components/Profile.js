@@ -5,35 +5,74 @@ import { useEffect, useState } from 'react';
 import axios from 'axios'
 import qs from 'qs'
 import Select from 'react-select'
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../firebase';
 
-export default function Profile() {
-    const [authenticated, setAuthenticated] = useState({});
+export default class Profile extends React.Component {
+    constructor(props) {
+        super(props);
 
-    function getLoginDetails() {
-        fetch('/login/status')
-            .then((response) => response.json())
-            .then((data) => {
-                console.log(data);
-                setAuthenticated(data);
-            })
+        this.state = {
+            login: "",
+            password: "",
+            user: null,
+            profile: null,
+            loading: true,
+        };
+
+        this.setCurrentUser = this.setCurrentUser.bind(this);
+        this.getProfile = this.getProfile.bind(this);
     }
 
-    useEffect(() => {
-        getLoginDetails();
-    }, [])
-
-    return (
-        <Layout>
-            {
-                authenticated.authenticated ?
-                    <div>
-                        <EditForm profile={authenticated.user.user_profile} onCommit={getLoginDetails} />
-                    </div>
-                    :
-                    <div></div>
+    async getProfile() {
+        this.setState({ loading: true });
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                this.setState({ loading: false });
+                return;
             }
-        </Layout>
-    );
+            console.log("User present, fetching profile");
+            fetch(`/profile/${user.uid}`)
+                .then(data => data.json())
+                .then(data => {
+                    this.setState({ profile: data, loading: false });
+                })
+                .catch((error) => {
+                    console.log(error)
+                })
+        })
+    }
+
+    async componentDidMount() {
+        onAuthStateChanged(auth, async (user) => {
+            this.setState({ user: user, loading: false });
+            await this.getProfile();
+        })
+    }
+
+    setCurrentUser() {
+        this.setState({ loading: true });
+        onAuthStateChanged(auth, async (user) => {
+            this.setState({ user: user, loading: false });
+        })
+
+    }
+
+
+    render() {
+        return (
+            <Layout>
+                {
+                    this.state.user && this.state.profile ?
+                        <div className='profile-edit-block-container'>
+                            <EditForm profile={this.state.profile} user={this.state.user} onCommit={this.getProfile} />
+                        </div>
+                        :
+                        <div></div>
+                }
+            </Layout>
+        );
+    }
 }
 
 class EditForm extends React.Component {
@@ -113,7 +152,7 @@ class EditForm extends React.Component {
         this.setState({ phoneNumber: val, phoneNumberValid: valid });
     }
 
-    handleSubmit(e) {
+    async handleSubmit(e) {
         e.preventDefault();
         console.log(this.state);
 
@@ -123,9 +162,10 @@ class EditForm extends React.Component {
             this.state.addressValid &&
             this.state.phoneNumberValid) {
             console.log("Valid");
+            const token = await this.props.user.getIdToken()
             axios({
                 method: 'PUT',
-                url: `api/profile/${this.props.profile._id}`,
+                url: `api/profile/${this.props.user.uid}`,
                 data: qs.stringify({
                     first_name: this.state.firstName,
                     last_name: this.state.lastName,
@@ -133,7 +173,10 @@ class EditForm extends React.Component {
                     address: this.state.address,
                     phone_number: this.state.phoneNumber,
                 }),
-                headers: { 'content-type': 'application/x-www-form-urlencoded;charset=utf-8' },
+                headers: {
+                    'content-type': 'application/x-www-form-urlencoded;charset=utf-8',
+                    'Authorization': 'Bearer ' + token
+                },
             })
                 .then((data) => {
                     console.log(data);
