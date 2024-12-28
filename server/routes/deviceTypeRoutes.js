@@ -71,7 +71,7 @@ deviceTypeRoutes.delete("/:id", async (req, res) => {
     } catch (err) {
         res.status(500);
         res.send('An error occured while processing request');
-        console.log(err);;
+        console.log(err);
     }
 });
 
@@ -79,7 +79,7 @@ deviceTypeRoutes.get("/", async (req, res) => {
     try {
         const result = await db.getDeviceTypes();
         res.status(200);
-        res.send(result);
+        res.send(JSON.stringify(result));
     } catch (err) {
         res.status(500);
         res.send('An error occured while processing request');

@@ -1,105 +1,88 @@
-const DbAccessor = require("../services/data/DbAccessor");
+import FirestoreAccessor from "../services/data/FirestoreAccessor.js";
+import { Router } from "express";
 
-module.exports = function (app) {
-    app.get("/api/servicetype/:id", async (req, res) => {
-        try {
-            const dbAccess = new DbAccessor();
-            const id = req.params['id'];
-            const result = await dbAccess.getServiceTypeById(id);
+const serviceTypeRoutes = Router();
+const db = new FirestoreAccessor();
 
-            if (!result) {
-                res.status(404);
-                res.send(`No service type with id ${id} found`)
-            }
-            else {
-                res.status(200);
-                res.send(result.toJSON());
-            }
-        } catch (err) {
-            res.status(500);
-            res.send('An error occured while processing request');
-            console.log(err);
+serviceTypeRoutes.get("/:id", async (req, res) => {
+    try {
+        const id = req.params['id'];
+        const result = await db.getServiceTypeById(id);
+
+        if (!result) {
+            res.status(404);
+            res.send(`No service type with id ${id} found`)
         }
-
-    });
-
-    app.post("/api/servicetype", async (req, res, next) => {
-        if (!req.user) {
-            res.status(401);
-            res.send("Not authenticated");
-            return;
-        }
-        try {
-            const dbAccess = new DbAccessor();
-            const data = req.body;
-            await dbAccess.addServiceType({
-                name: data.name,
-                description: data.description,
-            })
+        else {
             res.status(200);
-            res.send('Service type created');
-        } catch (err) {
-            res.status(500);
-            res.send('An error occured while processing request');
-            console.log(err);
+            res.send(result.toJson());
         }
-    });
+    } catch (err) {
+        res.status(500);
+        res.send('An error occured while processing request');
+        console.log(err);
+    }
 
-    app.put("/api/servicetype/:id", async (req, res, next) => {
-        if (!req.user) {
-            res.status(401);
-            res.send("Not authenticated");
-            return;
-        }
-        try {
-            const dbAccess = new DbAccessor();
-            const id = req.params['id']
-            const data = req.body;
+});
 
-            await dbAccess.updateServiceTypeById({
-                service_type_id: id,
-                name: data.name,
-                description: data.description,
-            })
-            res.status(200);
-            res.send('Service type updated');
-        } catch (err) {
-            res.status(500);
-            res.send('An error occured while processing request');
-            console.log(err);
-        }
-    });
+serviceTypeRoutes.post("/", async (req, res, next) => {
+    try {
+        const data = req.body;
+        await db.addServiceType({
+            name: data.name,
+            description: data.description,
+        })
+        res.status(200);
+        res.send('Service type created');
+    } catch (err) {
+        res.status(500);
+        res.send('An error occured while processing request');
+        console.log(err);
+    }
+});
 
-    app.delete("/api/servicetype/:id", async (req, res, next) => {
-        if (!req.user) {
-            res.status(401);
-            res.send("Not authenticated");
-            return;
-        }
-        try {
-            const dbAccess = new DbAccessor();
-            const id = req.params['id'];
-            await dbAccess.deleteServiceTypeById(id);
-            res.status(200);
-            res.send({ message: `Service type with id of ${id} deleted successfully` });
-        } catch (err) {
-            res.status(500);
-            res.send('An error occured while processing request');
-            console.log(err);;
-        }
-    });
+serviceTypeRoutes.put("/:id", async (req, res, next) => {
+    try {
+        const id = req.params['id']
+        const data = req.body;
 
-    app.get("/api/servicetype", async (req, res) => {
-        try {
-            const dbAccess = new DbAccessor();
-            const result = await dbAccess.getServiceTypes();
-            res.status(200);
-            res.send(result);
-        } catch (err) {
-            res.status(500);
-            res.send('An error occured while processing request');
-            console.log(err);
-        }
+        await db.updateServiceTypeById({
+            service_type_id: id,
+            name: data.name,
+            description: data.description,
+        })
+        res.status(200);
+        res.send('Service type updated');
+    } catch (err) {
+        res.status(500);
+        res.send('An error occured while processing request');
+        console.log(err);
+    }
+});
 
-    });
-}
+serviceTypeRoutes.delete("/:id", async (req, res, next) => {
+    try {
+        const id = req.params['id'];
+        await db.deleteServiceTypeById(id);
+        res.status(200);
+        res.send({ message: `Service type with id of ${id} deleted successfully` });
+    } catch (err) {
+        res.status(500);
+        res.send('An error occured while processing request');
+        console.log(err);;
+    }
+});
+
+serviceTypeRoutes.get("/", async (req, res) => {
+    try {
+        const result = await db.getServiceTypes();
+        res.status(200);
+        res.send(result);
+    } catch (err) {
+        res.status(500);
+        res.send('An error occured while processing request');
+        console.log(err);
+    }
+});
+
+export default serviceTypeRoutes;

@@ -5,8 +5,153 @@ import axios from 'axios'
 import qs from 'qs'
 import Select from 'react-select'
 import { Link } from "react-router-dom";
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../firebase';
 
-export default function Catalog() {
+export default class Catalog extends React.Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            user: null,
+            loading: true,
+            editedService: null,
+            services: null,
+            visibleServices: null,
+            serviceTypes: null,
+            deviceTypes: null,
+            rerenderCount: 0
+        };
+
+        this.fetchServices = this.fetchServices.bind(this);
+        this.setEditedService = this.setEditedService.bind(this);
+        this.setVisibleServices = this.setVisibleServices.bind(this);
+        this.rerender = this.rerender.bind(this);
+    }
+
+    setEditedService(service) {
+        this.setState({ editedService: service })
+        this.rerender();
+    }
+
+    rerender() {
+        this.setState({ rerenderCount: this.state.rerenderCount + 1 })
+    }
+
+    async fetchServices(firstLoading = true) {
+        this.setState({ loading: true })
+        fetch('/api/service')
+            .then((response) => response.json())
+            .then((data) => {
+                if (firstLoading) this.setState({ services: data, visibleServices: data });
+                else this.setState({ services: data, visibleServices: data, loading: false });
+            })
+            .catch((err) => {
+                console.log(err.message);
+            });
+    }
+
+    async fetchOther() {
+        this.setState({ loading: true })
+        fetch('/api/servicetype')
+            .then((response) => response.json())
+            .then((data) => {
+                this.setState({ serviceTypes: data });
+            })
+            .catch((err) => {
+                console.log(err.message);
+            });
+        fetch('/api/devicetype')
+            .then((response) => response.json())
+            .then((data) => {
+                this.setState({ deviceTypes: data });
+            })
+            .catch((err) => {
+                console.log(err.message);
+            });
+    }
+
+    async componentDidMount() {
+        onAuthStateChanged(auth, async (user) => {
+            await this.fetchServices();
+            await this.fetchOther();
+            this.setState({ user: user });
+            this.setState({ loading: false });
+        })
+    }
+
+    setVisibleServices(data) {
+        this.setState({ visibleServices: data })
+    }
+
+    render() {
+        return (
+            <>
+                <Layout>
+                    {
+                        this.state.user && this.state.serviceTypes && this.state.deviceTypes ?
+                            <div className='crud-container'>
+                                <CreateForm
+                                    serviceTypes={this.state.serviceTypes}
+                                    deviceTypes={this.state.deviceTypes}
+                                    name=""
+                                    basePrice="0"
+                                    description=""
+                                    onCommit={e => this.fetchServices(false)} />
+                                {
+                                    this.state.editedService ?
+                                        <EditForm
+                                            serviceTypes={this.state.serviceTypes}
+                                            deviceTypes={this.state.deviceTypes}
+                                            service={this.state.editedService}
+                                            key={this.state.rerenderCount + 23}
+                                            onCommit={e => this.fetchServices(false)} />
+                                        :
+                                        <div></div>
+                                }
+                            </div>
+                            :
+                            <div></div>
+                    }
+                    {
+                        this.state.user && !this.state.loading ?
+                            <div>
+                                <SearchBlock
+                                    serviceTypes={this.state.serviceTypes}
+                                    deviceTypes={this.state.deviceTypes}
+                                    onSearchResults={this.setVisibleServices} />
+                                <div className='service-block-container'>
+                                    {
+                                        this.state.visibleServices ?
+                                            this.state.visibleServices.map((service, index) => (
+                                                <div key={index}>
+                                                    <ServiceBlock
+                                                        user={this.state.user}
+                                                        authenticated={!!this.state.user}
+                                                        service={service}
+                                                        onDelete={e => this.fetchServices(false)}
+                                                        onEdit={e => this.setEditedService(service)} />
+                                                </div>
+
+                                            ))
+                                            :
+                                            <div>Loading...</div>
+                                    }
+                                </div>
+                            </div>
+                            :
+                            <div>
+
+                            </div>
+                    }
+
+                </Layout>
+            </>
+        );
+    }
+}
+
+function Catalogc() {
     const [services, setServices] = useState([]);
     const [searchResults, setSearchResults] = useState([]);
     const [authenticated, setAuthenticated] = useState({});
@@ -94,7 +239,7 @@ function ServiceBlock({ user, service, onDelete, onEdit, authenticated }) {
     }
 
     function onInfo(e) {
-        window.location.href = `/catalog/${service._id}`;
+        window.location.href = `/catalog/${service.id}`;
     }
 
     function orderService() {
@@ -169,7 +314,7 @@ function ServiceBlock({ user, service, onDelete, onEdit, authenticated }) {
                 {
                     authenticated ?
                         <div className='service-block-buttons'>
-                            <button style={{ backgroundColor: 'red' }} onClick={(e) => { deleteService(service._id) }}>Delete</button>
+                            <button style={{ backgroundColor: 'red' }} onClick={(e) => { deleteService(service.id) }}>Delete</button>
                             <button onClick={onEdit}>Edit</button>
                             <button onClick={onInfo}>View</button>
                             <button onClick={orderService}>Purchase</button>
@@ -193,7 +338,7 @@ function SearchBlock({ onSearchResults }) {
     const [query, setQuery] = useState("");
     const [chosenMinPrice, setChosenMinPrice] = useState(0);
     const [chosenMaxPrice, setChosenMaxPrice] = useState(0);
-    const [sortBy, setSortBy] = useState("");
+    const [sortBy, setSortBy] = useState({});
     const [chosenServiceTypes, setChosenServiceTypes] = useState({});
     const [chosenDeviceTypes, setChosenDeviceTypes] = useState([]);
 
@@ -249,7 +394,7 @@ function SearchBlock({ onSearchResults }) {
             .then((data) => {
                 let options = [];
                 for (const entry of data) {
-                    options.push({ value: entry._id, label: entry.name })
+                    options.push({ value: entry.id, label: entry.name })
                 }
                 setServiceTypes(options);
             })
@@ -264,7 +409,7 @@ function SearchBlock({ onSearchResults }) {
             .then((data) => {
                 let options = [];
                 for (const entry of data) {
-                    options.push({ value: entry._id, label: entry.name })
+                    options.push({ value: entry.id, label: entry.name })
                 }
                 setDeviceTypes(options);
             })
@@ -331,32 +476,18 @@ class CreateForm extends React.Component {
     }
 
     async componentDidMount() {
-        let serviceTypeData =
-            await fetch('/api/servicetype')
-                .then((response) => response.json())
-                .then((data) => {
-                    let options = [];
-                    for (const entry of data) {
-                        options.push({ value: entry._id, label: entry.name })
-                    }
-                    return options;
-                })
-                .catch((err) => {
-                    console.log(err.message);
-                });
-        let deviceTypeData =
-            await fetch('/api/devicetype')
-                .then((response) => response.json())
-                .then((data) => {
-                    let options = [];
-                    for (const entry of data) {
-                        options.push({ value: entry._id, label: entry.name })
-                    }
-                    return options;
-                })
-                .catch((err) => {
-                    console.log(err.message);
-                });
+        let serviceTypeData = [];
+
+        for (const entry of this.props.serviceTypes) {
+            serviceTypeData.push({ value: entry.id, label: entry.name })
+        }
+
+        let deviceTypeData = [];
+
+        for (const entry of this.props.deviceTypes) {
+            deviceTypeData.push({ value: entry.id, label: entry.name })
+        }
+
         this.setState({
             serviceTypes: serviceTypeData,
             deviceTypes: deviceTypeData
@@ -530,22 +661,16 @@ class EditForm extends React.Component {
             basePrice: this.props.service.base_price,
             basePriceValid: this.validateBasePrice(this.props.service.base_price)
         });
-        let serviceTypeData =
-            await fetch('/api/servicetype')
-                .then((response) => response.json())
-                .then((data) => {
-                    let options = [];
-                    for (const entry of data) {
-                        options.push({ value: entry._id, label: entry.name })
-                    }
-                    return options;
-                })
-                .catch((err) => {
-                    console.log(err.message);
-                });
 
+        let serviceTypeData = [];
+
+        for (const entry of this.props.serviceTypes) {
+            serviceTypeData.push({ value: entry.id, label: entry.name })
+        }
+
+        // set selected options for provided service
         for (const st of serviceTypeData) {
-            if (st.value == this.props.service.service_type._id) {
+            if (st.value == this.props.service.service_type.id) {
                 this.setState({
                     selectedServiceType: st,
                     selectedServiceTypeValid: this.validateServiceType(st)
@@ -554,21 +679,14 @@ class EditForm extends React.Component {
             }
         }
 
-        let deviceTypeData =
-            await fetch('/api/devicetype')
-                .then((response) => response.json())
-                .then((data) => {
-                    let options = [];
-                    for (const entry of data) {
-                        options.push({ value: entry._id, label: entry.name })
-                    }
-                    return options;
-                })
-                .catch((err) => {
-                    console.log(err.message);
-                });
+        let deviceTypeData = [];
 
-        let deviceTypesTmp = this.props.service.device_types.map((dt) => { return { value: dt._id, label: dt.name } });
+        for (const entry of this.props.deviceTypes) {
+            deviceTypeData.push({ value: entry.id, label: entry.name })
+        }
+
+        // set selected options for provided service
+        let deviceTypesTmp = this.props.service.device_types.map((dt) => { return { value: dt.id, label: dt.name } });
         this.setState({
             selectedDeviceTypes: deviceTypesTmp,
             selectedDeviceTypesValid: this.validateDeviceTypes(deviceTypesTmp)
@@ -643,10 +761,9 @@ class EditForm extends React.Component {
             this.state.selectedDeviceTypesValid &&
             this.state.selectedServiceTypeValid) {
             console.log("Valid");
-            console.log(this.props.service._id);
             axios({
                 method: 'PUT',
-                url: `api/service/${this.props.service._id}`,
+                url: `api/service/${this.props.service.id}`,
                 data: qs.stringify({
                     service_type_id: this.state.selectedServiceType.value,
                     name: this.state.name,

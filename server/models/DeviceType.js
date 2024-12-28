@@ -1,5 +1,6 @@
 class DeviceTypeModel {
-    constructor({ name, description, created_at, last_updated_at }) {
+    constructor({ id, name, description, created_at, last_updated_at }) {
+        this.id = id;
         this.name = name;
         this.description = description;
         this.created_at = created_at;
@@ -15,8 +16,9 @@ class DeviceTypeModel {
         }
     }
 
-    static fromJson(jsonObj) {
+    static fromJson(jsonObj, id) {
         return new DeviceTypeModel({
+            id: id,
             name: jsonObj.name,
             description: jsonObj.description,
             created_at: jsonObj.created_at.toDate(),

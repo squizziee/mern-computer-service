@@ -5,75 +5,96 @@ import axios from 'axios'
 import qs from 'qs'
 import Select from 'react-select'
 import { Link } from "react-router-dom";
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../firebase';
 
-export default function DeviceTypes() {
-    const [deviceTypes, setDeviceTypes] = useState([]);
-    const [authenticated, setAuthenticated] = useState({});
-    const [editedDeviceType, setEditedDeviceType] = useState();
-    const [state, setState] = useState(Date.now());
+export default class DeviceTypes extends React.Component {
+    constructor(props) {
+        super(props);
 
-    function aboba(serviceType) {
-        console.log(serviceType);
-        setEditedDeviceType(serviceType)
+        this.state = {
+            login: "",
+            password: "",
+            user: null,
+            loading: true,
+            editedDeviceType: null,
+            deviceTypes: null,
+            rerenderCount: 0
+        };
+
+        this.fetchDeviceTypes = this.fetchDeviceTypes.bind(this);
+        this.setEditedDeviceType = this.setEditedDeviceType.bind(this);
+        this.rerender = this.rerender.bind(this);
     }
 
-    function fetchDeviceTypes() {
+    setEditedDeviceType(type) {
+        this.setState({ editedDeviceType: type })
+        this.rerender();
+    }
+
+    rerender() {
+        this.setState({ rerenderCount: this.state.rerenderCount + 1 })
+    }
+
+    async fetchDeviceTypes() {
         fetch('/api/devicetype')
             .then((response) => response.json())
             .then((data) => {
-                console.log(data);
-                setDeviceTypes(data);
+                this.setState({ deviceTypes: data });
             })
             .catch((err) => {
                 console.log(err.message);
             });
     }
 
-    useEffect(() => {
-        fetchDeviceTypes()
-    }, []);
+    async componentDidMount() {
+        onAuthStateChanged(auth, async (user) => {
+            await this.fetchDeviceTypes();
+            this.setState({ user: user });
+            this.setState({ loading: false });
+        })
+    }
 
-    useEffect(() => {
-        fetch('/login/status')
-            .then((response) => response.json())
-            .then((data) => {
-                console.log(data);
-                setAuthenticated(data);
-            })
-    }, [])
 
-    return (
-        <>
-            <Layout>
-                {
-                    authenticated.authenticated ?
-                        <div className='crud-container'>
-                            <CreateForm name="" description="" onCommit={fetchDeviceTypes} />
-                            {
-                                editedDeviceType ?
-                                    //<EditBlock service={editedService} key={state} onEditCommited={fetchServices} />
-                                    <EditForm service={editedDeviceType} key={state} onCommit={fetchDeviceTypes} />
-                                    :
-                                    <div></div>
-                            }
-                        </div>
-                        :
-                        <div></div>
-                }
-                <div className='service-block-container'>
+
+    render() {
+        return (
+            <>
+                <Layout>
                     {
-                        deviceTypes.map((deviceType, index) => (
-                            <div key={index}>
-                                <DeviceTypeBlock authenticated={authenticated.authenticated} deviceType={deviceType} onDelete={fetchDeviceTypes} onEdit={(e) => { aboba(deviceType); setState(Date.now()) }} />
+                        this.state.user ?
+                            <div className='crud-container'>
+                                <CreateForm name="" description="" key={this.state.rerenderCount} onCommit={this.fetchDeviceTypes} />
+                                {
+                                    this.state.editedDeviceType ?
+                                        <EditForm deviceType={this.state.editedDeviceType} key={this.state.rerenderCount + 69} onCommit={this.fetchDeviceTypes} />
+                                        :
+                                        <div></div>
+                                }
                             </div>
-
-                        ))
+                            :
+                            <div></div>
                     }
-                </div>
+                    {
+                        this.state.deviceTypes ?
+                            <div className='service-block-container'>
+                                {
+                                    this.state.deviceTypes.map((deviceType, index) => (
+                                        <div key={index}>
+                                            <DeviceTypeBlock authenticated={!!this.state.user} deviceType={deviceType} onDelete={this.fetchDeviceTypes} onEdit={e => this.setEditedDeviceType(deviceType)} />
+                                        </div>
 
-            </Layout>
-        </>
-    );
+                                    ))
+                                }
+                            </div>
+                            :
+                            <div>Loading...</div>
+                    }
+
+                </Layout>
+            </>
+        );
+    }
 }
 
 function DeviceTypeBlock({ deviceType, onDelete, onEdit, authenticated }) {
@@ -83,7 +104,6 @@ function DeviceTypeBlock({ deviceType, onDelete, onEdit, authenticated }) {
             url: `/api/devicetype/${id}`,
         })
             .then((data) => {
-                console.log(data);
                 onDelete();
             })
             .catch((err) => {
@@ -123,7 +143,7 @@ function DeviceTypeBlock({ deviceType, onDelete, onEdit, authenticated }) {
                 {
                     authenticated ?
                         <div className='service-block-buttons'>
-                            <button style={{ backgroundColor: 'red' }} onClick={(e) => { deleteDeviceType(deviceType._id) }}>Delete</button>
+                            <button style={{ backgroundColor: 'red' }} onClick={(e) => { deleteDeviceType(deviceType.id) }}>Delete</button>
                             <button onClick={onEdit}>Edit</button>
                         </div>
                         :
@@ -200,7 +220,6 @@ class CreateForm extends React.Component {
                 headers: { 'content-type': 'application/x-www-form-urlencoded;charset=utf-8' },
             })
                 .then((data) => {
-                    console.log(data);
                     this.props.onCommit();
                 })
                 .catch((err) => {
@@ -212,7 +231,6 @@ class CreateForm extends React.Component {
     render() {
         let nameColor = this.state.nameValid === true ? "transparent" : "pink";
         let descriptionColor = this.state.descriptionValid === true ? "transparent" : "pink";
-        console.log(descriptionColor);
 
         return (
             <div className='general-block'>
@@ -261,10 +279,10 @@ class EditForm extends React.Component {
 
     async componentDidMount() {
         this.setState({
-            name: this.props.service.name,
-            nameValid: this.validateName(this.props.service.name),
-            description: this.props.service.description,
-            descriptionValid: this.validateDescription(this.props.service.description),
+            name: this.props.deviceType.name,
+            nameValid: this.validateName(this.props.deviceType.name),
+            description: this.props.deviceType.description,
+            descriptionValid: this.validateDescription(this.props.deviceType.description),
         });
     }
 
@@ -296,10 +314,9 @@ class EditForm extends React.Component {
         if (this.state.nameValid &&
             this.state.descriptionValid) {
             console.log("Valid");
-            console.log(this.props.service._id);
             axios({
                 method: 'PUT',
-                url: `api/devicetype/${this.props.service._id}`,
+                url: `api/devicetype/${this.props.deviceType.id}`,
                 data: qs.stringify({
                     name: this.state.name,
                     description: this.state.description,
@@ -320,6 +337,7 @@ class EditForm extends React.Component {
     render() {
         let nameColor = this.state.nameValid === true ? "#f7f7f7" : "pink";
         let descriptionColor = this.state.descriptionValid === true ? "#f7f7f7" : "pink";
+
         return (
             <div className='general-block'>
                 <div className='general-block-title'>Edit</div>

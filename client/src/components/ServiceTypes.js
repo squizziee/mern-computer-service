@@ -5,85 +5,107 @@ import axios from 'axios'
 import qs from 'qs'
 import Select from 'react-select'
 import { Link } from "react-router-dom";
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../firebase';
 
-export default function ServiceTypes() {
-    const [serviceTypes, setServiceTypes] = useState([]);
-    const [authenticated, setAuthenticated] = useState({});
-    const [editedServiceType, setEditedServiceType] = useState();
-    const [state, setState] = useState(Date.now());
+export default class ServiceTypes extends React.Component {
+    constructor(props) {
+        super(props);
 
-    function aboba(serviceType) {
-        console.log(serviceType);
-        setEditedServiceType(serviceType)
+        this.state = {
+            login: "",
+            password: "",
+            user: null,
+            loading: true,
+            editedServiceType: null,
+            serviceTypes: null,
+            rerenderCount: 0
+        };
+
+        this.fetchServiceTypes = this.fetchServiceTypes.bind(this);
+        this.setEditedServiceType = this.setEditedServiceType.bind(this);
+        this.rerender = this.rerender.bind(this);
     }
 
-    function fetchServiceTypes() {
+    setEditedServiceType(type) {
+        this.setState({ editedServiceType: type })
+        this.rerender();
+    }
+
+    rerender() {
+        this.setState({ rerenderCount: this.state.rerenderCount + 1 })
+    }
+
+    async fetchServiceTypes() {
         fetch('/api/servicetype')
             .then((response) => response.json())
             .then((data) => {
-                console.log(data);
-                setServiceTypes(data);
+                this.setState({ serviceTypes: data });
             })
             .catch((err) => {
                 console.log(err.message);
             });
     }
 
-    useEffect(() => {
-        fetchServiceTypes()
-    }, []);
+    async componentDidMount() {
+        onAuthStateChanged(auth, async (user) => {
+            await this.fetchServiceTypes();
+            this.setState({ user: user });
+            this.setState({ loading: false });
+        })
 
-    useEffect(() => {
-        fetch('/login/status')
-            .then((response) => response.json())
-            .then((data) => {
-                console.log(data);
-                setAuthenticated(data);
-            })
-    }, [])
 
-    return (
-        <>
-            <Layout>
-                {
-                    authenticated.authenticated ?
-                        <div className='crud-container'>
-                            <CreateForm name="" description="" onCommit={fetchServiceTypes} />
-                            {
-                                editedServiceType ?
-                                    //<EditBlock service={editedService} key={state} onEditCommited={fetchServices} />
-                                    <EditForm service={editedServiceType} key={state} onCommit={fetchServiceTypes} />
-                                    :
-                                    <div></div>
-                            }
-                        </div>
-                        :
-                        <div></div>
-                }
-                <div className='service-block-container'>
+    }
+
+
+
+    render() {
+        return (
+            <>
+                <Layout>
                     {
-                        serviceTypes.map((serviceType, index) => (
-                            <div key={index}>
-                                <ServiceTypeBlock authenticated={authenticated.authenticated} serviceType={serviceType} onDelete={fetchServiceTypes} onEdit={(e) => { aboba(serviceType); setState(Date.now()) }} />
+                        this.state.user ?
+                            <div className='crud-container'>
+                                <CreateForm name="" description="" key={this.state.rerenderCount} onCommit={this.fetchServiceTypes} />
+                                {
+                                    this.state.editedServiceType ?
+                                        <EditForm serviceType={this.state.editedServiceType} key={this.state.rerenderCount + 69} onCommit={this.fetchServiceTypes} />
+                                        :
+                                        <div></div>
+                                }
                             </div>
-
-                        ))
+                            :
+                            <div></div>
                     }
-                </div>
+                    {
+                        this.state.serviceTypes ?
+                            <div className='service-block-container'>
+                                {
+                                    this.state.serviceTypes.map((serviceType, index) => (
+                                        <div key={index}>
+                                            <ServiceTypeBlock authenticated={!!this.state.user} serviceType={serviceType} onDelete={this.fetchServiceTypes} onEdit={e => this.setEditedServiceType(serviceType)} />
+                                        </div>
 
-            </Layout>
-        </>
-    );
+                                    ))
+                                }
+                            </div>
+                            :
+                            <div>Loading...</div>
+                    }
+
+                </Layout>
+            </>
+        );
+    }
 }
 
 function ServiceTypeBlock({ serviceType, onDelete, onEdit, authenticated }) {
-    function deleteService(id) {
+    function deleteServiceType(id) {
         axios({
             method: 'DELETE',
             url: `/api/servicetype/${id}`,
         })
             .then((data) => {
-                console.log(data);
                 onDelete();
             })
             .catch((err) => {
@@ -113,6 +135,7 @@ function ServiceTypeBlock({ serviceType, onDelete, onEdit, authenticated }) {
                                 </div>
                             </div>
                         </div>
+
                         :
                         <div></div>
                 }
@@ -122,7 +145,7 @@ function ServiceTypeBlock({ serviceType, onDelete, onEdit, authenticated }) {
                 {
                     authenticated ?
                         <div className='service-block-buttons'>
-                            <button style={{ backgroundColor: 'red' }} onClick={(e) => { deleteService(serviceType._id) }}>Delete</button>
+                            <button style={{ backgroundColor: 'red' }} onClick={(e) => { deleteServiceType(serviceType.id) }}>Delete</button>
                             <button onClick={onEdit}>Edit</button>
                         </div>
                         :
@@ -179,6 +202,7 @@ class CreateForm extends React.Component {
 
     onDescriptionChange(e) {
         var val = e.target.value;
+
         var valid = this.validateDescription(val);
         this.setState({ description: val, descriptionValid: valid });
     }
@@ -190,7 +214,7 @@ class CreateForm extends React.Component {
             this.state.descriptionValid) {
             axios({
                 method: 'POST',
-                url: `/api/servicetype`,
+                url: `api/servicetype`,
                 data: qs.stringify({
                     name: this.state.name,
                     description: this.state.description,
@@ -198,12 +222,10 @@ class CreateForm extends React.Component {
                 headers: { 'content-type': 'application/x-www-form-urlencoded;charset=utf-8' },
             })
                 .then((data) => {
-                    console.log(data);
                     this.props.onCommit();
                 })
                 .catch((err) => {
                     console.log(err);
-                    this.props.onCommit();
                 })
         }
     }
@@ -211,6 +233,7 @@ class CreateForm extends React.Component {
     render() {
         let nameColor = this.state.nameValid === true ? "transparent" : "pink";
         let descriptionColor = this.state.descriptionValid === true ? "transparent" : "pink";
+
         return (
             <div className='general-block'>
                 <div className='general-block-title'>Create new</div>
@@ -258,10 +281,10 @@ class EditForm extends React.Component {
 
     async componentDidMount() {
         this.setState({
-            name: this.props.service.name,
-            nameValid: this.validateName(this.props.service.name),
-            description: this.props.service.description,
-            descriptionValid: this.validateDescription(this.props.service.description),
+            name: this.props.serviceType.name,
+            nameValid: this.validateName(this.props.serviceType.name),
+            description: this.props.serviceType.description,
+            descriptionValid: this.validateDescription(this.props.serviceType.description),
         });
     }
 
@@ -293,10 +316,9 @@ class EditForm extends React.Component {
         if (this.state.nameValid &&
             this.state.descriptionValid) {
             console.log("Valid");
-            console.log(this.props.service._id);
             axios({
                 method: 'PUT',
-                url: `api/servicetype/${this.props.service._id}`,
+                url: `api/servicetype/${this.props.serviceType.id}`,
                 data: qs.stringify({
                     name: this.state.name,
                     description: this.state.description,
@@ -317,6 +339,7 @@ class EditForm extends React.Component {
     render() {
         let nameColor = this.state.nameValid === true ? "#f7f7f7" : "pink";
         let descriptionColor = this.state.descriptionValid === true ? "#f7f7f7" : "pink";
+
         return (
             <div className='general-block'>
                 <div className='general-block-title'>Edit</div>

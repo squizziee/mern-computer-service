@@ -195,6 +195,7 @@ class EditForm extends React.Component {
         let passportSerialColor = this.state.passportSerialValid ? "transparent" : "pink";
         let addressColor = this.state.addressValid ? "transparent" : "pink";
         let phoneNumberColor = this.state.phoneNumberValid ? "transparent" : "pink";
+
         return (
             <div className='profile-edit-block'>
                 <div className='profile-edit-block-title'>Profile</div>
