@@ -18,24 +18,9 @@ export default function Home() {
     }, []);
 
     useEffect(() => {
-        // const token = localStorage.getItem('@token');
-
-        // if (token) {
-        //     signInWithCustomToken(auth, token)
-        //         .then((userCredential) => {
-        //             setUser(auth.currentUser)
-        //         })
-        //         .catch((error) => {
-        //             console.error('Error signing in with token:', error);
-        //         });
-        // } else {
-        //     // User is signed out
-        //     // ...
-        //     console.log("user is logged out")
-        // }
-        console.log("aaaa");
-
-        setUser(auth.currentUser)
+        onAuthStateChanged(auth, (user) => {
+            setUser(user)
+        })
 
     }, [])
 
@@ -47,7 +32,25 @@ export default function Home() {
                         {
                             user ?
                                 <div className='greeting'>
-                                    <span>Hi, {user.displayName}!</span>
+                                    <span style={{ position: "relative" }}>
+                                        Hi, {user.displayName}!
+                                        {
+                                            user.providerData[0].providerId == "google.com" ?
+                                                <div style={{
+                                                    display: "inline",
+                                                    fontSize: "12px",
+                                                    textTransform: "uppercase",
+                                                    color: "#cccccc",
+                                                    position: "absolute",
+                                                    top: "0",
+                                                    right: "0"
+                                                }}>
+                                                    Logged in with Google
+                                                </div>
+                                                :
+                                                null
+                                        }
+                                    </span>
                                     <span>Check out the <Link to={'/catalog'}>catalog</Link>  CRUD, cool stuff.</span>
                                 </div>
                                 :

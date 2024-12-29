@@ -70,7 +70,19 @@ orderRoutes.get("/", async (req, res) => {
 
 });
 
-orderRoutes.get("/pending", async (req, res) => {
+orderRoutes.get("/filter/all", async (req, res) => {
+    try {
+        const result = await db.getOrders();
+        res.status(200).send(result);
+    } catch (err) {
+        res.status(500);
+        res.send('An error occured while processing request');
+        console.log(err);
+    }
+
+});
+
+orderRoutes.get("/filter/pending", async (req, res) => {
     try {
         const result = await db.getPendingOrders();
         res.status(200).send(result);
@@ -82,7 +94,7 @@ orderRoutes.get("/pending", async (req, res) => {
 
 });
 
-orderRoutes.get("/cancelled", async (req, res) => {
+orderRoutes.get("/filter/cancelled", async (req, res) => {
     try {
         const result = await db.getCancelledOrders();
         res.status(200).send(result);
@@ -93,7 +105,7 @@ orderRoutes.get("/cancelled", async (req, res) => {
 
 });
 
-orderRoutes.get("/completed", async (req, res) => {
+orderRoutes.get("/filter/completed", async (req, res) => {
     try {
         const result = await db.getCompletedOrders();
         res.status(200).send(result);

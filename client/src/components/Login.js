@@ -123,9 +123,9 @@ class LoginForm extends React.Component {
 
     }
 
-    loginWithGoogle() {
+    loginWithGoogle(e) {
+        e.preventDefault();
         const provider = new GoogleAuthProvider();
-
         signInWithPopup(auth, provider)
             .then(_ => this.props.onLogin())
             .catch((error) => {
@@ -133,9 +133,10 @@ class LoginForm extends React.Component {
             })
     }
 
-    loginWithEmailAndPassword() {
+    loginWithEmailAndPassword(e) {
+        e.preventDefault();
         signInWithEmailAndPassword(auth, this.state.email, this.state.password)
-            .then(a => {
+            .then(_ => {
                 this.props.onLogin();
             })
             .catch((error) => {
@@ -157,7 +158,7 @@ class LoginForm extends React.Component {
         return (
             <div className='register-block'>
                 <div className='register-block-title'>Login</div>
-                <form onSubmit={this.loginWithEmailAndPassword}>
+                <form onSubmit={(e) => this.loginWithEmailAndPassword(e)}>
                     <p>
                         <label>Email</label><br />
                         <input type='text'
@@ -173,7 +174,7 @@ class LoginForm extends React.Component {
                 </form>
                 <div className='google-block'>
                     <span className='google-text'>Or log in with <strong>Google</strong></span>
-                    <button className='button-google' onClick={this.loginWithGoogle}><FaGoogle /></button>
+                    <button className='button-google' onClick={(e) => this.loginWithGoogle(e)}><FaGoogle /></button>
                 </div>
 
             </div>

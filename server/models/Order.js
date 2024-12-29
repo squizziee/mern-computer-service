@@ -62,20 +62,22 @@ class OrderModel {
 
     static async fromJson(jsonObj, id, db) {
         // makes me cry every time using this inside models but whatever
-        let serviceSnapshot = await db.collection("services").where(FieldPath.documentId(), '==', jsonObj.service_id).get();
+        let serviceSnapshot = await db.collection("services").where(FieldPath.documentId(), '==', jsonObj.service).get();
 
-        if (serviceSnapshot.empty) throw new Error("No service with id of " + jsonObj.service_id);
+        if (serviceSnapshot.empty) throw new Error("No service with id of " + jsonObj.service);
 
-        let userProfileSnapshot = await db.collection("user_profiles").where(FieldPath.documentId(), '==', jsonObj.client_id).get();
+        let userProfileSnapshot = await db.collection("user_profiles").where('user', '==', jsonObj.client).get();
 
-        if (userProfileSnapshot.empty) throw new Error("No profile with id of " + jsonObj.client_id);
+        if (userProfileSnapshot.empty) throw new Error("No profile with id of " + jsonObj.client);
 
         return new OrderModel({
             id: id,
             additional_info: jsonObj.additional_info,
-            service_type: ServiceModel.fromJson(serviceSnapshot.docs[0].data(), serviceSnapshot.docs[0].id),
+            service: await ServiceModel.fromJson(serviceSnapshot.docs[0].data(), serviceSnapshot.docs[0].id, db),
             client: UserProfileModel.fromJson(userProfileSnapshot.docs[0].data(), userProfileSnapshot.docs[0].id),
             created_at: jsonObj.created_at.toDate(),
+            is_cancelled: jsonObj.is_cancelled,
+            is_completed: jsonObj.is_completed,
             last_updated_at: jsonObj.last_updated_at.toDate(),
         })
     }

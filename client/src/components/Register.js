@@ -90,18 +90,17 @@ class RegisterForm extends React.Component {
             await createUserWithEmailAndPassword(auth, this.state.email, this.state.password)
                 .then(credential => {
                     updateProfile(credential.user, { displayName: this.state.username })
-                });
-            await signInWithEmailAndPassword(auth, this.state.email, this.state.password)
+                    return credential;
+                })
                 .then((credential) => {
                     axios({
                         url: "/auth/new",
                         method: "POST",
                         data: qs.stringify({ user_id: credential.user.uid }),
+                    }).then(_ => {
+                        this.props.onFinished();
                     })
-                });
-            onAuthStateChanged(auth, async (user) => {
-                this.props.onFinished();
-            })
+                })
         }
     }
 

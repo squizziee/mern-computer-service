@@ -306,14 +306,14 @@ class FirestoreAccessor {
         const serviceSnapshot = await this.db.collection('services').where(FieldPath.documentId(), '==', service_id).get();
         if (serviceSnapshot.empty) throw new Error("No service with id of " + service_id)
 
-        const userProfileSnapshot = await this.db.collection('user_profiles').where(FieldPath.documentId(), '==', client_id).get();
+        const userProfileSnapshot = await this.db.collection('user_profiles').where('user', '==', client_id).get();
         if (userProfileSnapshot.empty) throw new Error("No profile with id of " + client_id)
 
         const now = new Date();
 
         const newOrder = new OrderModel({
-            service: ServiceModel.fromJson(serviceSnapshot.docs[0].data(), serviceSnapshot.docs[0].id),
-            additional_info: additional_info,
+            service: await ServiceModel.fromJson(serviceSnapshot.docs[0].data(), serviceSnapshot.docs[0].id, this.db),
+            additional_info: additional_info ? additional_info : "",
             client: UserProfileModel.fromJson(userProfileSnapshot.docs[0].data(), userProfileSnapshot.docs[0].id),
             is_completed: false,
             is_cancelled: false,
@@ -342,8 +342,10 @@ class FirestoreAccessor {
 
         for (const doc of orderSnapshot.docs) {
             try {
-                orders.push(await OrderModel.fromJson(doc.data(), doc.id))
-            } catch (err) {/* skipping errors */ }
+                orders.push(await OrderModel.fromJson(doc.data(), doc.id, this.db))
+            } catch (err) {
+
+            }
 
         }
 
@@ -362,7 +364,7 @@ class FirestoreAccessor {
 
         for (const doc of orderSnapshot.docs) {
             try {
-                orders.push(await OrderModel.fromJson(doc.data(), doc.id))
+                orders.push(await OrderModel.fromJson(doc.data(), doc.id, this.db))
             } catch (err) {/* skipping errors */ }
 
         }
@@ -372,7 +374,7 @@ class FirestoreAccessor {
 
     async getCompletedOrders() {
         const orderSnapshot = await this.db.collection('orders')
-            .where('is_completed', '==', false)
+            .where('is_completed', '==', true)
             .get();
 
         if (orderSnapshot.empty) return [];
@@ -381,7 +383,7 @@ class FirestoreAccessor {
 
         for (const doc of orderSnapshot.docs) {
             try {
-                orders.push(await OrderModel.fromJson(doc.data(), doc.id))
+                orders.push(await OrderModel.fromJson(doc.data(), doc.id, this.db))
             } catch (err) {/* skipping errors */ }
 
         }
@@ -391,7 +393,7 @@ class FirestoreAccessor {
 
     async getCancelledOrders() {
         const orderSnapshot = await this.db.collection('orders')
-            .where('is_cancelled', '==', false)
+            .where('is_cancelled', '==', true)
             .get();
 
         if (orderSnapshot.empty) return [];
@@ -400,7 +402,7 @@ class FirestoreAccessor {
 
         for (const doc of orderSnapshot.docs) {
             try {
-                orders.push(await OrderModel.fromJson(doc.data(), doc.id))
+                orders.push(await OrderModel.fromJson(doc.data(), doc.id, this.db))
             } catch (err) {/* skipping errors */ }
 
         }

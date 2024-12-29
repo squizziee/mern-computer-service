@@ -23,6 +23,7 @@ export default class Navigation extends React.Component {
     async getProfile() {
         this.setState({ loading: true });
         onAuthStateChanged(auth, async (user) => {
+            console.log(user);
             if (!user) {
                 this.setState({ loading: false });
                 return;

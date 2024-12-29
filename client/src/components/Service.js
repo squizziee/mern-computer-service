@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom"
 import axios from "axios"
 import Layout from "./Layout";
 import qs from 'qs';
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../firebase";
 
 export default function ServiceInfo() {
     const { id } = useParams()
@@ -10,12 +12,14 @@ export default function ServiceInfo() {
     const [authenticated, setAuthenticated] = useState({});
 
     useEffect(() => {
-        fetch('/login/status')
-            .then((response) => response.json())
-            .then((data) => {
-                console.log(data);
-                setAuthenticated(data);
-            })
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                setAuthenticated({ authenticated: true, user: user });
+            }
+            else {
+                setAuthenticated({ authenticated: false, user: null });
+            }
+        })
     }, [])
 
     function deleteService(id) {
@@ -71,7 +75,7 @@ export default function ServiceInfo() {
             <Layout>
                 <div className='service-info-container'>
                     {
-                        service._id ?
+                        service.id ?
                             <div className='service-info-block'>
                                 <div className="name">{service.name}</div>
                                 <div className="type">{service.service_type.name}</div>
@@ -91,7 +95,7 @@ export default function ServiceInfo() {
                                         {
                                             authenticated.authenticated ?
                                                 <div style={{ display: 'inline-block' }}>
-                                                    <button style={{ backgroundColor: 'red' }} onClick={(e) => { deleteService(service._id) }}>Delete</button>
+                                                    <button style={{ backgroundColor: 'red' }} onClick={(e) => { deleteService(service.id) }}>Delete</button>
                                                     <button onClick={orderService}>Purchase</button>
                                                 </div>
 

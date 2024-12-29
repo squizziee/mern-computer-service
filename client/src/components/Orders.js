@@ -5,21 +5,23 @@ import axios from 'axios'
 import qs from 'qs'
 import Select from 'react-select'
 import { Link } from "react-router-dom";
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../firebase';
 
 export default function Orders() {
     const [orders, setOrders] = useState([]);
-    const [state, setState] = useState(Date.now());
     const [authenticated, setAuthenticated] = useState({});
+    const [state, setState] = useState(Date.now());
 
     const filterOptions = [
-        { value: '', label: 'All' },
+        { value: 'all', label: 'All' },
         { value: 'pending', label: 'Pending' },
         { value: 'cancelled', label: 'Cancelled' },
         { value: 'completed', label: 'Completed' },
     ]
 
     function fetchOrdersWithFilter(filter) {
-        fetch(`/api/order${filter.value}`)
+        fetch(`/api/order/filter/${filter.value}`)
             .then((response) => response.json())
             .then((data) => {
                 console.log(data);
@@ -53,17 +55,19 @@ export default function Orders() {
     }
 
     useEffect(() => {
-        fetchOrders()
-    }, []);
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                setAuthenticated({ authenticated: true, user: user })
+            } else {
+                setAuthenticated({ authenticated: false })
+            }
+
+        })
+    }, [])
 
     useEffect(() => {
-        fetch('/login/status')
-            .then((response) => response.json())
-            .then((data) => {
-                console.log(data);
-                setAuthenticated(data);
-            })
-    }, [])
+        fetchOrders()
+    }, []);
 
     return (
         <>
@@ -76,7 +80,7 @@ export default function Orders() {
                     {
                         orders.map((order, index) => (
                             <div key={index}>
-                                <OrderBlock order={order} onUpdate={fetchOrders} />
+                                <OrderBlock order={order} onUpdate={fetchOrders} authenticated={authenticated} />
                             </div>
 
                         ))
@@ -88,11 +92,11 @@ export default function Orders() {
     );
 }
 
-const OrderBlock = ({ order, onUpdate }) => {
+const OrderBlock = ({ order, onUpdate, authenticated }) => {
     function cancelOrder() {
         axios({
             method: 'PUT',
-            url: `api/order/cancel/${order._id}`,
+            url: `api/order/cancel/${order.id}`,
         })
             .then((data) => {
                 console.log(data);
@@ -106,7 +110,7 @@ const OrderBlock = ({ order, onUpdate }) => {
     function completeOrder() {
         axios({
             method: 'PUT',
-            url: `api/order/complete/${order._id}`,
+            url: `api/order/complete/${order.id}`,
         })
             .then((data) => {
                 console.log(data);
@@ -124,7 +128,7 @@ const OrderBlock = ({ order, onUpdate }) => {
                     order.service ?
                         <div>
                             {
-                                order.isCompleted ?
+                                order.is_completed ?
                                     <div className='order-completed'>
                                         <span>Completed</span>
                                     </div>
@@ -132,7 +136,7 @@ const OrderBlock = ({ order, onUpdate }) => {
                                     <div></div>
                             }
                             {
-                                order.isCancelled ?
+                                order.is_cancelled ?
                                     <div className='order-cancelled'>
                                         <span>Cancelled</span>
                                     </div>
@@ -153,10 +157,10 @@ const OrderBlock = ({ order, onUpdate }) => {
                         <div>
                             <div className='order-general'>
                                 <div className='order-id'>
-                                    #{order._id.substring(5)}
+                                    #{order.id.substring(5)}
                                 </div>
                                 <div>
-                                    <strong>{order.client.user_profile.first_name} {order.client.user_profile.last_name} </strong>({order.client.email})
+                                    <strong>{order.client.first_name} {order.client.last_name} </strong>({order.client.phone_number})
                                 </div>
                             </div>
                             <div className='order-service'>
@@ -172,10 +176,16 @@ const OrderBlock = ({ order, onUpdate }) => {
                                 }
                             </div>
                             <div className='order-total'>
-                                <div className='buttons'>
-                                    <button onClick={cancelOrder}>Cancel</button>
-                                    <button onClick={completeOrder} style={{ backgroundColor: "#ffc400", color: "#000000" }}>Complete</button>
-                                </div>
+                                {
+                                    authenticated.authenticated ?
+                                        <div className='buttons'>
+                                            <button onClick={cancelOrder}>Cancel</button>
+                                            <button onClick={completeOrder} style={{ backgroundColor: "#ffc400", color: "#000000" }}>Complete</button>
+                                        </div>
+                                        :
+                                        null
+                                }
+
                                 <div className='order-price'>
                                     ${order.service.base_price}
                                 </div>

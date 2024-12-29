@@ -114,7 +114,7 @@ export default class Catalog extends React.Component {
                             <div></div>
                     }
                     {
-                        this.state.user && !this.state.loading ?
+                        !this.state.loading ?
                             <div>
                                 <SearchBlock
                                     serviceTypes={this.state.serviceTypes}
@@ -251,8 +251,8 @@ function ServiceBlock({ user, service, onDelete, onEdit, authenticated }) {
             method: 'POST',
             url: `/api/order/`,
             data: qs.stringify({
-                service: service,
-                client: user,
+                service: service.id,
+                client: user.uid,
                 additional_info: info
             }),
         })
